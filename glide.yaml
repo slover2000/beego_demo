@@ -1,0 +1,23 @@
+package: github.com/slover2000/beego_demo
+import:
+- package: github.com/astaxie/beego
+  version: ^1.9.2
+  subpackages:
+  - logs
+- package: github.com/sirupsen/logrus
+  version: ^1.0.4
+- package: github.com/slover2000/prisma
+  version: ^0.2.11
+  subpackages:
+  - discovery
+  - logging
+  - trace
+  - trace/zipkin
+- package: golang.org/x/net
+  subpackages:
+  - context
+testImport:
+- package: github.com/smartystreets/goconvey
+  version: ^1.6.3
+  subpackages:
+  - convey

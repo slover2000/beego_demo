@@ -1,0 +1,4 @@
+2017/12/08 16:25:46.304 [I] [asm_amd64.s:2337] receive signal 'interrupt', stop http server
+2017/12/08 16:29:59.378 [I] [asm_amd64.s:2337] receive signal 'interrupt', stop http server
+2017/12/08 16:31:15.310 [I] [asm_amd64.s:2337] receive signal 'interrupt', stop http server
+2017/12/08 16:34:01.421 [I] receive signal 'interrupt', stop http server

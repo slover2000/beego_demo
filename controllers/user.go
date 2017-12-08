@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"github.com/slover2000/beego_demo/models"
 	"encoding/json"
 
 	"github.com/astaxie/beego"
+	"github.com/slover2000/beego_demo/models"		
 )
 
 // UserController Operations about Users
