@@ -95,7 +95,7 @@ func main() {
 		register.Register()
 
         s := <-c
-		logs.Info("receive signal '%v', stop http server", s)		
+		logs.Info("receive signal '%s', stop http server", s.String())		
         register.Unregister()
 		interceptorClient.Close()
 		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
