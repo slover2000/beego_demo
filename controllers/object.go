@@ -1,13 +1,13 @@
 package controllers
 
 import (
-	"github.com/bee_demo/models"
+	"github.com/slover2000/beego_demo/models"
 	"encoding/json"
 
 	"github.com/astaxie/beego"
 )
 
-// Operations about object
+// ObjectController Operations about object
 type ObjectController struct {
 	beego.Controller
 }
