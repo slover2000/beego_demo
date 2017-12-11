@@ -1,8 +1,8 @@
 hash: 01354273b3b59808596152a8c84ca4c011f80414e6a0c6fa543fa46a68d4d011
-updated: 2017-12-08T17:18:03.4682837+08:00
+updated: 2017-12-11T16:25:33.0106751+08:00
 imports:
 - name: github.com/apache/thrift
-  version: 05a08ce9c177ffbe8c395fdc9e8f5a4c5daef02c
+  version: 8101f00b0966deebd36a6ba658aa59d718453345
   subpackages:
   - lib/go/thrift
 - name: github.com/astaxie/beego
@@ -21,25 +21,42 @@ imports:
   subpackages:
   - quantile
 - name: github.com/coreos/etcd
-  version: fc2eecf90ca93d343c91bcb5397ffb95a5c2735e
+  version: 809b0d71a36a38c6884a3cd67897078495dbd921
   subpackages:
   - auth/authpb
   - clientv3
   - etcdserver/api/v3rpc/rpctypes
   - etcdserver/etcdserverpb
   - mvcc/mvccpb
+- name: github.com/gogo/protobuf
+  version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
+  subpackages:
+  - gogoproto
+  - proto
+  - protoc-gen-gogo/descriptor
 - name: github.com/golang/protobuf
-  version: 5a0f697c9ed9d68fef0116532c6e05cfeae00e55
+  version: 1e59b77b52bf8e4b449a57e6f79f21226d571845
   subpackages:
   - proto
   - ptypes
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
+- name: github.com/lestrrat/go-file-rotatelogs
+  version: 9df8b44f21785240553882138c5df2e9cc1db910
+- name: github.com/lestrrat/go-strftime
+  version: 04ef93e285313c8978cbc7cad26d2aa7a9927451
 - name: github.com/matttproud/golang_protobuf_extensions
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
   - pbutil
+- name: github.com/olivere/elastic
+  version: 7a065d53ac847c9aba9385e84fa24ef4647a6ae2
+  subpackages:
+  - config
+  - uritemplates
+- name: github.com/pkg/errors
+  version: 8842a6e0cc595d1cc9d931f6c875883967280e32
 - name: github.com/prometheus/client_golang
   version: 661e31bf844dfca9aeba15f27ea8aa0d485ad212
   subpackages:
@@ -59,10 +76,12 @@ imports:
   version: a6e9df898b1336106c743392c48ee0b71f5c4efa
   subpackages:
   - xfs
+- name: github.com/rifflock/lfshook
+  version: 765177c893cc46c565c1c4c774d3a25967bbb547
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/slover2000/prisma
-  version: 33e235e2789b835479c084a1e7cf52d11cf43d96
+  version: 2436ebf9e20bf93d0f0d5c69ce30d07bed6053f4
   subpackages:
   - discovery
   - logging

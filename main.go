@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"syscall"
 	"os/signal"
+	"golang.org/x/net/context"
 	
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 
-    "github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
+    "github.com/sirupsen/logrus"	
+	"github.com/rifflock/lfshook"
+	"github.com/lestrrat/go-file-rotatelogs"
 		
 	"github.com/slover2000/prisma"
     "github.com/slover2000/prisma/logging"
@@ -24,9 +26,8 @@ import (
 )
 
 func initInterceptor() (*prisma.InterceptorClient, error) {
-    // initialize logger
-    logger := logrus.New()
-	logger.Formatter = &logrus.JSONFormatter{}
+	initLog("access.log")
+	// initialize logger
 	
 	sampleRate := beego.AppConfig.DefaultFloat("tracesamplerate", 0.01)
 	sampleQPS := beego.AppConfig.DefaultFloat("traceqps", 100)
@@ -39,7 +40,7 @@ func initInterceptor() (*prisma.InterceptorClient, error) {
 	interceptorClient, err := prisma.NewInterceptorClient(
 		context.Background(),
 		prisma.EnableTracing(beego.BConfig.AppName, policy, collector),
-		prisma.EnableLogging(logging.InfoLevel, logrus.NewEntry(logger)),
+		prisma.EnableLogging(logging.InfoLevel, logrus.NewEntry(logrus.StandardLogger())),
 		prisma.EnableHTTPServerMetrics(),
 		prisma.EnableGRPCClientMetrics(),	
 		prisma.EnableMetricsExportHTTPServer(9090)) 					
@@ -51,18 +52,41 @@ func initInterceptor() (*prisma.InterceptorClient, error) {
 	return interceptorClient, nil
 }
 
+func initLog(filename string) {
+	writer, err := rotatelogs.New(
+		filename + ".%Y%m%d",
+		rotatelogs.WithLinkName(filename),
+		rotatelogs.WithMaxAge(time.Duration(7 * 24) * time.Hour),
+		rotatelogs.WithRotationTime(time.Duration(24) * time.Hour),
+	)
+
+	if err != nil {
+		panic("can't create rotatelogs writer")
+	}
+
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+	logrus.SetLevel(logrus.InfoLevel)
+	logrus.AddHook(lfshook.NewHook(lfshook.WriterMap{
+		logrus.InfoLevel: writer,
+		logrus.WarnLevel: writer,
+		logrus.ErrorLevel: writer,
+		logrus.FatalLevel: writer,
+	}, &logrus.JSONFormatter{}))
+}
+
 func main() {
 	if beego.BConfig.RunMode == "dev" {
 		beego.BConfig.WebConfig.DirectoryIndex = true
 		beego.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 	}	
-	beego.BConfig.Log.AccessLogs = true
+	beego.BConfig.RunMode = "prod"
+	beego.BConfig.Log.AccessLogs = false
 	beego.BConfig.WebConfig.AutoRender = false
 
 	// init log
-	logs.SetLogger(logs.AdapterFile,`{"filename":"access.log","level":6,"maxlines":0,"maxsize":0,"daily":true,"maxdays":7}`)
-	logs.SetLogFuncCall(false)
-
+	//logs.SetLogger(logs.AdapterFile,`{"filename":"access.log","level":6,"maxlines":0,"maxsize":0,"daily":true,"maxdays":7}`)
+	//logs.SetLogFuncCall(false)
+	
 	interceptorClient, err := initInterceptor()
 	if err != nil {
 		return
