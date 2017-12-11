@@ -1,5 +1,5 @@
 hash: 01354273b3b59808596152a8c84ca4c011f80414e6a0c6fa543fa46a68d4d011
-updated: 2017-12-11T16:25:33.0106751+08:00
+updated: 2017-12-11T18:10:12.5006267+08:00
 imports:
 - name: github.com/apache/thrift
   version: 8101f00b0966deebd36a6ba658aa59d718453345
@@ -81,7 +81,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/slover2000/prisma
-  version: 2436ebf9e20bf93d0f0d5c69ce30d07bed6053f4
+  version: 500a1c0e4f9538d32d4a3a42e711dcaa753bddb6
   subpackages:
   - discovery
   - logging

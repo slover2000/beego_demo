@@ -1,6 +1,6 @@
 *.exe
 *.test
-*.log
+*.log*
 *.tmp
 debug
 .vscode

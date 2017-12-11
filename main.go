@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"fmt"
 	"time"
@@ -11,7 +12,7 @@ import (
 	
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-
+	
     "github.com/sirupsen/logrus"	
 	"github.com/rifflock/lfshook"
 	"github.com/lestrrat/go-file-rotatelogs"
@@ -23,6 +24,7 @@ import (
 	"github.com/slover2000/prisma/trace/zipkin"
 	
 	_ "github.com/slover2000/beego_demo/routers"
+	"github.com/slover2000/beego_demo/services"
 )
 
 func initInterceptor() (*prisma.InterceptorClient, error) {
@@ -40,9 +42,8 @@ func initInterceptor() (*prisma.InterceptorClient, error) {
 	interceptorClient, err := prisma.NewInterceptorClient(
 		context.Background(),
 		prisma.EnableTracing(beego.BConfig.AppName, policy, collector),
-		prisma.EnableLogging(logging.InfoLevel, logrus.NewEntry(logrus.StandardLogger())),
-		prisma.EnableHTTPServerMetrics(),
-		prisma.EnableGRPCClientMetrics(),	
+		prisma.EnableLogging(logging.InfoLevel),
+		prisma.EnableAllMetrics(),
 		prisma.EnableMetricsExportHTTPServer(9090)) 					
 	if err != nil {
 		logs.Error("create http interceptor failed:%s", err.Error())
@@ -89,6 +90,13 @@ func main() {
 	
 	interceptorClient, err := initInterceptor()
 	if err != nil {
+		log.Fatal("create interceptor with fail:%s", err.Error())
+		return
+	}
+
+	err = services.InitHelloServiceClient("http://10.98.16.215:2379", interceptorClient)
+	if err != nil {
+		log.Fatal("init hello service failed:%s", err.Error())
 		return
 	}
 
