@@ -44,7 +44,7 @@ func initInterceptor() (*prisma.InterceptorClient, error) {
 		prisma.EnableTracing(beego.BConfig.AppName, policy, collector),
 		prisma.EnableLogging(logging.InfoLevel),
 		prisma.EnableAllMetrics(),
-		prisma.EnableMetricsExportHTTPServer(9090)) 					
+		prisma.EnableMetricsExportHTTPServer(9100)) 					
 	if err != nil {
 		logs.Error("create http interceptor failed:%s", err.Error())
 		return nil, err
@@ -130,6 +130,7 @@ func main() {
 		logs.Info("receive signal '%s', stop http server", s.String())		
         register.Unregister()
 		interceptorClient.Close()
+		services.CloseHelloServiceClient()
 		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 		server.Shutdown(ctx)
 		cancel()

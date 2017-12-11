@@ -5,6 +5,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/slover2000/beego_demo/models"		
+	"github.com/slover2000/beego_demo/services"
 )
 
 // UserController Operations about Users
@@ -33,6 +34,7 @@ func (u *UserController) Post() {
 func (u *UserController) GetAll() {
 	users := models.GetAllUsers()
 	u.Data["json"] = users
+	services.QueryGrpcDemo()
 	u.ServeJSON()
 }
 
