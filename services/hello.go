@@ -46,10 +46,10 @@ func CloseHelloServiceClient() {
 	}
 }
 
-func QueryGrpcDemo() {
+func QueryGrpcDemo(ctx context.Context) {
 	t := time.Now().Second()
 	client := pb.NewGreeterClient(grpcConn)
-	reqCtx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	reqCtx, cancel := context.WithTimeout(ctx, 10 * time.Second)
 	resp, err := client.SayHello(reqCtx, &pb.HelloRequest{Name: "world " + strconv.Itoa(t)})
 	cancel()
 	if err == nil {

@@ -33,8 +33,8 @@ func (u *UserController) Post() {
 // @router / [get]
 func (u *UserController) GetAll() {
 	users := models.GetAllUsers()
-	u.Data["json"] = users
-	services.QueryGrpcDemo()
+	u.Data["json"] = users	
+	services.QueryGrpcDemo(u.Ctx.Request.Context())
 	u.ServeJSON()
 }
 
