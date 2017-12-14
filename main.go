@@ -10,13 +10,14 @@ import (
 	"os/signal"
 	"golang.org/x/net/context"
 	
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
-	
-    "github.com/sirupsen/logrus"	
+	"github.com/astaxie/beego"	
+		
+	"github.com/sirupsen/logrus"
 	"github.com/rifflock/lfshook"
 	"github.com/lestrrat/go-file-rotatelogs"
-		
+
+	"github.com/koding/multiconfig"
+
 	"github.com/slover2000/prisma"
     "github.com/slover2000/prisma/logging"
     "github.com/slover2000/prisma/discovery"
@@ -25,7 +26,13 @@ import (
 	
 	_ "github.com/slover2000/beego_demo/routers"
 	"github.com/slover2000/beego_demo/services"
+	"github.com/slover2000/beego_demo/dao"
 )
+
+// ServerConfig server configuration
+type ServerConfig struct {	
+	MongoConfig dao.MongoConfig
+}
 
 func initInterceptor() (*prisma.InterceptorClient, error) {
 	initLog("access.log")
@@ -39,14 +46,14 @@ func initInterceptor() (*prisma.InterceptorClient, error) {
 					trace.NewConsoleCollector(), 
 					zipkin.NewHTTPCollector(zipkinHost, zipkin.HTTPBatchSize(10), zipkin.HTTPMaxBacklog(3), zipkin.HTTPBatchInterval(3 * time.Second)))
 
-	interceptorClient, err := prisma.NewInterceptorClient(
+	interceptorClient, err := prisma.ConfigInterceptorClient(
 		context.Background(),
 		prisma.EnableTracing(beego.BConfig.AppName, policy, collector),
 		prisma.EnableLogging(logging.InfoLevel),
 		prisma.EnableAllMetrics(),
 		prisma.EnableMetricsExportHTTPServer(9100)) 					
 	if err != nil {
-		logs.Error("create http interceptor failed:%s", err.Error())
+		log.Printf("create http interceptor failed:%s", err.Error())
 		return nil, err
 	}
 	
@@ -84,21 +91,42 @@ func main() {
 	beego.BConfig.Log.AccessLogs = false
 	beego.BConfig.WebConfig.AutoRender = false
 
+	// read server configs from file
+	m := multiconfig.NewWithPath("./conf/server.toml") // supports TOML and JSON	
+	serverConf := &ServerConfig{}
+	if err := m.Load(serverConf); err != nil {
+		log.Printf("read server.toml config file failed with err:%v", err)
+		return
+	}
+	m.MustLoad(serverConf) // Check for error	
+
 	// init log
 	//logs.SetLogger(logs.AdapterFile,`{"filename":"access.log","level":6,"maxlines":0,"maxsize":0,"daily":true,"maxdays":7}`)
 	//logs.SetLogFuncCall(false)
-	
+
 	interceptorClient, err := initInterceptor()
 	if err != nil {
-		log.Fatal("create interceptor with fail:%s", err.Error())
+		log.Fatalf("create interceptor with fail:%s", err.Error())
 		return
 	}
+	defer interceptorClient.Close()
 
 	err = services.InitHelloServiceClient("http://10.98.16.215:2379", interceptorClient)
 	if err != nil {
-		log.Fatal("init hello service failed:%s", err.Error())
+		log.Fatalf("init hello service failed:%s", err.Error())
 		return
 	}
+	defer services.CloseHelloServiceClient()
+
+	// initialize mongo
+	err = dao.InitMongoClient(&serverConf.MongoConfig)
+	if err != nil {
+		log.Printf("Initialize mongo client failed with err:%v", err)
+		return
+	}
+	defer dao.CloseMongoClient()
+
+	interceptorClient.Enable3rdDBMetrics(prisma.MongoName)
 
 	// intercept http handler
 	httpHandler := interceptorClient.HTTPHandler(beego.BeeApp.Handlers) // 使用beego handlers 的结构处理 HTTP 请求
@@ -121,22 +149,20 @@ func main() {
 			discovery.WithRegisterInterval(time.Duration(beego.AppConfig.DefaultInt("freshinterval", 10)) * time.Second),
 			discovery.WithRegisterTTL(time.Duration(beego.AppConfig.DefaultInt("servicettl", 15)) * time.Second))
 		if err != nil {
-			logs.Error("init etcd register failed with:%s", err.Error())
+			log.Printf("init etcd register failed with:%s", err.Error())
 			return
 		}
 		register.Register()
 
-        s := <-c
-		logs.Info("receive signal '%s', stop http server", s.String())		
+		s := <-c
+		logrus.Infof("receive signal '%s', stop http server", s.String())
         register.Unregister()
-		interceptorClient.Close()
-		services.CloseHelloServiceClient()
 		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 		server.Shutdown(ctx)
 		cancel()
-        os.Exit(1)
     }(ch)
 
+	logrus.Infof("start http server on port:%d", beego.BConfig.Listen.HTTPPort)
 	if err := server.ListenAndServe(); err != nil {
         fmt.Println("http server exit:", err)
     }

@@ -1,0 +1,14 @@
+# server configuration
+[RedisConfig]
+Addrs = ["10.98.18.35:6379"]
+DialTimeout = 5
+ReadTimeout = 5
+WriteTimeout = 5
+PoolSize = 20
+PoolTimeout = 60
+
+[MongoConfig]
+Addrs = ["10.98.16.215:37017"]
+DialTimeout = 30
+Database = "test_db"
+PoolLimit = 30

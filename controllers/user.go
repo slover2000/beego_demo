@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/astaxie/beego"
-	"github.com/slover2000/beego_demo/models"		
+	"github.com/slover2000/beego_demo/models"	
+	"github.com/slover2000/beego_demo/dao"
 	"github.com/slover2000/beego_demo/services"
 )
 
@@ -32,9 +33,10 @@ func (u *UserController) Post() {
 // @Success 200 {object} models.User
 // @router / [get]
 func (u *UserController) GetAll() {
-	users := models.GetAllUsers()
-	u.Data["json"] = users	
-	services.QueryGrpcDemo(u.Ctx.Request.Context())
+	ctx := u.Ctx.Request.Context()
+	users, _ := dao.QueryAllUser(ctx)
+	u.Data["json"] = users
+	services.QueryGrpcDemo(ctx)
 	u.ServeJSON()
 }
 

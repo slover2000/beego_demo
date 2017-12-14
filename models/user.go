@@ -17,17 +17,17 @@ func init() {
 }
 
 type User struct {
-	Id       string
-	Username string
-	Password string
-	Profile  Profile
+	Id       string	 `bson:"_id"`
+	Username string	 `bson:"name"`
+	Password string	 `bson:"password"`
+	Profile  Profile `bson:"profile"`
 }
 
 type Profile struct {
-	Gender  string
-	Age     int
-	Address string
-	Email   string
+	Gender  string  `bson:"gender"`
+	Age     int     `bson:"age"`
+	Address string  `bson:"address"`
+	Email   string  `bson:"email"`
 }
 
 func AddUser(u User) string {
