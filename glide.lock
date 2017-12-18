@@ -1,5 +1,5 @@
-hash: 01354273b3b59808596152a8c84ca4c011f80414e6a0c6fa543fa46a68d4d011
-updated: 2017-12-14T17:34:27.2890407+08:00
+hash: 7d0b90753e919cbf459a1093ea52abbd012576f8a0fc0abeb3a6939900905e17
+updated: 2017-12-18T11:19:01.0741448+08:00
 imports:
 - name: github.com/apache/thrift
   version: 14f5d500b9ae0fb6654aec9009a8bc34a8bb6dfb
@@ -89,9 +89,11 @@ imports:
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/slover2000/prisma
-  version: 6a798d01756020f13ca052da35ce68fd5757fe3c
+  version: 2200c13013e0df7268f32f92b152c5ae2b916610
   subpackages:
   - discovery
+  - hystrix
+  - hystrix/internal
   - logging
   - metrics
   - metrics/prometheus

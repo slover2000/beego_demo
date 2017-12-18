@@ -1,6 +1,6 @@
 package dao
 
-import (
+import (	
 	"time"
 	"golang.org/x/net/context"
 	
@@ -9,6 +9,7 @@ import (
 
 	"github.com/slover2000/prisma"
 	p "github.com/slover2000/prisma/thirdparty"
+	_ "github.com/slover2000/prisma/hystrix"
 	"github.com/slover2000/beego_demo/models"
 )
 
@@ -61,10 +62,11 @@ func StoreUserInfo(user *models.User) bool {
 }
 
 // QueryAllUser query user info from db
-func QueryAllUser(ctx context.Context) ([]models.User, error) {	
+func QueryAllUser(ctx context.Context) ([]models.User, error) {
+	//ctx = hystrix.WithGroup(ctx, "default")
 	ctx = p.JoinDatabaseContextValue(ctx, prisma.MongoName, "test_db", "user", "find", "find all users")
 	reqctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	values, err := prisma.StandardInterceptorClient().DoDBAction(
+	values, err := prisma.StandardInterceptorClient().Do(
 		reqctx, 
 		func () (interface{}, error) {
 			sessionCopy := mongoInstance.Copy()
