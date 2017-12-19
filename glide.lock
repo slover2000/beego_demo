@@ -1,5 +1,5 @@
 hash: 7d0b90753e919cbf459a1093ea52abbd012576f8a0fc0abeb3a6939900905e17
-updated: 2017-12-18T11:19:01.0741448+08:00
+updated: 2017-12-19T15:11:29.9583818+08:00
 imports:
 - name: github.com/apache/thrift
   version: 14f5d500b9ae0fb6654aec9009a8bc34a8bb6dfb
@@ -89,7 +89,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/slover2000/prisma
-  version: 2200c13013e0df7268f32f92b152c5ae2b916610
+  version: cf6355b9fcf04fb53d73d15e87131b149d84e883
   subpackages:
   - discovery
   - hystrix
