@@ -1,24 +1,25 @@
 package dao
 
-import (	
+import (
 	"time"
+
 	"golang.org/x/net/context"
-	
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/slover2000/prisma"
-	p "github.com/slover2000/prisma/thirdparty"
-	"github.com/slover2000/prisma/hystrix"
 	"github.com/slover2000/beego_demo/models"
+	"github.com/slover2000/prisma"
+	"github.com/slover2000/prisma/hystrix"
+	p "github.com/slover2000/prisma/thirdparty"
 )
 
 // MongoConfig is the settings of mongo
 type MongoConfig struct {
-	Addrs        []string	`required:"true"`
-	DialTimeout  int		`default:"10"`
-	Database	 string		`required:"true"`
-	PoolLimit	 int		`default:"10"`
+	Addrs       []string `required:"true"`
+	DialTimeout int      `default:"10"`
+	Database    string   `required:"true"`
+	PoolLimit   int      `default:"10"`
 }
 
 var mongoInstance *mgo.Session
@@ -26,15 +27,15 @@ var mongoInstance *mgo.Session
 // InitMongoClient initialize mongo client
 func InitMongoClient(cfg *MongoConfig) error {
 	client, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs: cfg.Addrs,
-		Timeout: time.Duration(cfg.DialTimeout) * time.Second,
-		Database: cfg.Database,
+		Addrs:     cfg.Addrs,
+		Timeout:   time.Duration(cfg.DialTimeout) * time.Second,
+		Database:  cfg.Database,
 		PoolLimit: cfg.PoolLimit,
 	})
 
 	if err == nil {
 		// Optional. Switch the session to a monotonic behavior.
-  		client.SetMode(mgo.Monotonic, true)
+		client.SetMode(mgo.Monotonic, true)
 		mongoInstance = client
 	}
 
@@ -66,9 +67,9 @@ func QueryAllUser(ctx context.Context) ([]models.User, error) {
 	ctx = hystrix.WithGroup(ctx, "mongo")
 	ctx = p.JoinDatabaseContextValue(ctx, prisma.MongoName, "test_db", "user", "find", "find all users")
 	reqctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	values, err := prisma.StandardInterceptorClient().Do(
-		reqctx, 
-		func () (interface{}, error) {
+	values, err := prisma.Do(
+		reqctx,
+		func() (interface{}, error) {
 			sessionCopy := mongoInstance.Copy()
 			defer sessionCopy.Close()
 
@@ -78,7 +79,7 @@ func QueryAllUser(ctx context.Context) ([]models.User, error) {
 			return users, err
 		})
 	cancel()
-	
+
 	if err != nil {
 		return nil, err
 	}

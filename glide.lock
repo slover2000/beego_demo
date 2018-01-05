@@ -1,5 +1,5 @@
 hash: 7d0b90753e919cbf459a1093ea52abbd012576f8a0fc0abeb3a6939900905e17
-updated: 2017-12-19T15:11:29.9583818+08:00
+updated: 2018-01-05T14:16:33.0604765+08:00
 imports:
 - name: github.com/apache/thrift
   version: 14f5d500b9ae0fb6654aec9009a8bc34a8bb6dfb
@@ -13,6 +13,7 @@ imports:
   - context/param
   - grace
   - logs
+  - orm
   - session
   - toolbox
   - utils
@@ -22,6 +23,17 @@ imports:
   - quantile
 - name: github.com/BurntSushi/toml
   version: a368813c5e648fee92e5f6c30e3944ff9d5e8895
+- name: github.com/casbin/beego-orm-adapter
+  version: 5a0889a912283a800c87550e4b89432d737eb517
+- name: github.com/casbin/casbin
+  version: 0d0039775e99fc9cb4ad190b6682427d47a9a66f
+  subpackages:
+  - config
+  - file-adapter
+  - model
+  - persist
+  - rbac
+  - util
 - name: github.com/coreos/etcd
   version: b48cf77abb78755c8654eb8da61bc90a32802e7d
   subpackages:
@@ -48,12 +60,18 @@ imports:
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
+- name: github.com/Knetic/govaluate
+  version: 9aa49832a739dcd78a5542ff189fb82c3e423116
 - name: github.com/koding/multiconfig
   version: 69c27309b2d751c576b59ea9c3726597c2375da3
 - name: github.com/lestrrat/go-file-rotatelogs
   version: 9df8b44f21785240553882138c5df2e9cc1db910
 - name: github.com/lestrrat/go-strftime
   version: 04ef93e285313c8978cbc7cad26d2aa7a9927451
+- name: github.com/lib/pq
+  version: 83612a56d3dd153a94a629cd64925371c9adad78
+  subpackages:
+  - oid
 - name: github.com/matttproud/golang_protobuf_extensions
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
@@ -89,7 +107,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/slover2000/prisma
-  version: cf6355b9fcf04fb53d73d15e87131b149d84e883
+  version: 92cbd373e492bf79a3b9f9b16ba6fcffb18b286f
   subpackages:
   - discovery
   - hystrix
