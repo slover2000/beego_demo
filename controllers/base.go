@@ -132,3 +132,8 @@ func (c *baseController) ajaxFailure(errno int, errmsg string) {
 	c.Data["json"] = responseData{status: errno, message: errmsg}
 	c.ServeJSON()
 }
+
+func (c *baseController) getClientIP() string {
+	s := strings.Split(c.Ctx.Request.RemoteAddr, ":")
+	return s[0]
+}

@@ -2,8 +2,13 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/orm"
+	_ "github.com/lib/pq"
 )
 
 var (
@@ -14,20 +19,32 @@ func init() {
 	UserList = make(map[string]*User)
 	u := User{"user_11111", "astaxie", "11111", Profile{"male", 20, "Singapore", "astaxie@gmail.com"}}
 	UserList["user_11111"] = &u
+
+	dataSource := fmt.Sprintf(
+		"dbname=%s user=%s password=%s host=%s port=%d sslmode=disable",
+		beego.AppConfig.String("postgres.database"),
+		beego.AppConfig.String("postgres.user"),
+		beego.AppConfig.String("postgres.password"),
+		beego.AppConfig.String("postgres.host"),
+		beego.AppConfig.DefaultInt("postgres.port", 5432))
+
+	orm.RegisterDriver("postgres", orm.DRPostgres)
+	orm.RegisterDataBase("default", "postgres", dataSource)
+	orm.SetMaxOpenConns("default", 30)
 }
 
 type User struct {
-	Id       string	 `bson:"_id"`
-	Username string	 `bson:"name"`
-	Password string	 `bson:"password"`
+	Id       string  `bson:"_id" orm:"auto"`
+	Username string  `bson:"name" orm:"unique"`
+	Password string  `bson:"password"`
 	Profile  Profile `bson:"profile"`
 }
 
 type Profile struct {
-	Gender  string  `bson:"gender"`
-	Age     int     `bson:"age"`
-	Address string  `bson:"address"`
-	Email   string  `bson:"email"`
+	Gender  string `bson:"gender"`
+	Age     int    `bson:"age"`
+	Address string `bson:"address"`
+	Email   string `bson:"email"`
 }
 
 func AddUser(u User) string {
