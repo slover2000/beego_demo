@@ -26,8 +26,9 @@ type responseData struct {
 
 type baseController struct {
 	beego.Controller
-	userID   uint64
-	userName string
+	permission bool
+	userID     uint64
+	userName   string
 }
 
 var enforcer *casbin.SyncedEnforcer
@@ -70,27 +71,37 @@ func init() {
 }
 
 func (c *baseController) Prepare() {
-	c.Data["version"] = beego.AppConfig.String("version")
+	c.Data["version"] = beego.AppConfig.String("site.version")
 	c.Data["siteName"] = beego.AppConfig.String("site.name")
 	if c.authenticate() {
+		c.permission = true	
 		c.Data["userName"] = c.userName
 	}
 }
 
 func (c *baseController) authenticate() bool {
+	controllerName, actionName := c.GetControllerAndAction()
+	if controllerName == "HomeController" && actionName == "Login" {
+		return false
+	}
+
 	req := c.Ctx.Request
 	resp := c.Ctx.ResponseWriter.ResponseWriter
 	sess, err := globalSessions.SessionStart(resp, req)
 	if err != nil {
-		c.Redirect("/login", 302)
+		c.Redirect(beego.URLFor("HomeController.Login"), 302)
 		return false
 	}
 	defer sess.SessionRelease(resp)
 
-	id := sess.Get("id")
+	id := sess.Get("uid")
 	name := sess.Get("name")
-	c.userID = id.(uint64)
-	c.userName = name.(string)
+	if id != nil {
+		c.userID = id.(uint64)
+	}
+	if name != nil {
+		c.userName = name.(string)
+	}
 
 	// check permission
 	if !enforcer.Enforce(c.userName, req.URL.Path, req.Method) {
@@ -104,7 +115,7 @@ func (c *baseController) authenticate() bool {
 		if isAjax != "" {
 			c.ajaxFailure(STATUS_PERMISSION_DENY, "没有权限")
 		} else {
-			c.Redirect("/home", 302)
+			c.Redirect(beego.URLFor("HomeController.Login"), 302)
 		}
 		return false
 	}
@@ -113,7 +124,7 @@ func (c *baseController) authenticate() bool {
 
 func (c *baseController) renderTemplate(tpl string) {
 	var tplname string
-	if len(tpl) > 0 {
+	if tpl != "" {
 		tplname = strings.Join([]string{tpl, "html"}, ".")
 	} else {
 		controllerName, actionName := c.GetControllerAndAction()

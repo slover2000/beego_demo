@@ -1,5 +1,5 @@
 hash: 7d0b90753e919cbf459a1093ea52abbd012576f8a0fc0abeb3a6939900905e17
-updated: 2018-01-05T14:16:33.0604765+08:00
+updated: 2018-01-08T17:40:24.3511199+08:00
 imports:
 - name: github.com/apache/thrift
   version: 14f5d500b9ae0fb6654aec9009a8bc34a8bb6dfb
@@ -26,7 +26,7 @@ imports:
 - name: github.com/casbin/beego-orm-adapter
   version: 5a0889a912283a800c87550e4b89432d737eb517
 - name: github.com/casbin/casbin
-  version: 0d0039775e99fc9cb4ad190b6682427d47a9a66f
+  version: 1b8f581b3213fee8295c7dc7018fb16566eb2cb9
   subpackages:
   - config
   - file-adapter
@@ -46,6 +46,12 @@ imports:
   version: 44e46d280b43ec1531bb25252440e34f1b800b65
 - name: github.com/fatih/structs
   version: f5faa72e73092639913f5833b75e1ac1d6bc7a63
+- name: github.com/gogap/errors
+  version: 149c546090d0ac947ee5f6772d431e30cf0f6f3b
+- name: github.com/gogap/logrus
+  version: f8627d12948f98c67a5f2c32d1861fb2396aeb1c
+- name: github.com/gogap/stack
+  version: fef68dddd4f8092a1be1acacb121f847315e5c94
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -107,7 +113,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/slover2000/prisma
-  version: 92cbd373e492bf79a3b9f9b16ba6fcffb18b286f
+  version: 062a2d274fb38b9390fc563166d1f31a164bf91b
   subpackages:
   - discovery
   - hystrix
@@ -123,6 +129,8 @@ imports:
 - name: golang.org/x/crypto
   version: 94eea52f7b742c7cbe0b03b22f0c4c8631ece122
   subpackages:
+  - bcrypt
+  - blowfish
   - ssh/terminal
 - name: golang.org/x/net
   version: 66aacef3dd8a676686c7ae3716979581e8b03c47

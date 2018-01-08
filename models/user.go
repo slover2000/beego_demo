@@ -1,10 +1,13 @@
 package models
 
 import (
+	"log"
 	"errors"
 	"fmt"
 	"strconv"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
@@ -28,9 +31,14 @@ func init() {
 		beego.AppConfig.String("postgres.host"),
 		beego.AppConfig.DefaultInt("postgres.port", 5432))
 
-	orm.RegisterDriver("postgres", orm.DRPostgres)
-	orm.RegisterDataBase("default", "postgres", dataSource)
-	orm.SetMaxOpenConns("default", 30)
+	if err := orm.RegisterDriver("postgres", orm.DRPostgres); err != nil {
+		log.Fatalf("register postgres driver failed: %v", err)
+	}
+
+	if err := orm.RegisterDataBase("models", "postgres", dataSource); err != nil {
+		log.Fatalf("register postgres database failed: %v", err)
+	}
+	orm.SetMaxOpenConns("models", 30)
 }
 
 type User struct {
@@ -100,4 +108,42 @@ func Login(username, password string) bool {
 
 func DeleteUser(uid string) {
 	delete(UserList, uid)
+}
+
+const (
+	// CaptchaWidth is width of image
+	CaptchaWidth = 110
+
+	// CaptchaHeight is height of image
+	CaptchaHeight = 45
+
+	// CaptchaCodeLen is the length of code
+	CaptchaCodeLen = 4
+
+	// BcryptCost is the strength of encryption
+	BcryptCost = 12
+)
+
+func encryptPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), BcryptCost)
+	return string(bytes), err
+}
+
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func GetAndVerifyUser(name, password string) (*User, error) {
+	o := orm.NewOrm()
+	user := new(User)
+	user.Username = name
+	if err := o.Read(user); err != nil {
+		return nil, err
+	}
+
+	if checkPasswordHash(user.Password, password) {
+		return user, nil
+	}
+	return nil, errors.New("user name or password is wrong")
 }

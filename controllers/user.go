@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"encoding/json"
-
 	"github.com/astaxie/beego"
-	"github.com/slover2000/beego_demo/models"	
+	
 	"github.com/slover2000/beego_demo/dao"
+	"github.com/slover2000/beego_demo/models"
 	"github.com/slover2000/beego_demo/services"
 )
 
@@ -120,4 +120,3 @@ func (u *UserController) Logout() {
 	u.Data["json"] = "logout success"
 	u.ServeJSON()
 }
-

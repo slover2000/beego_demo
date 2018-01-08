@@ -109,12 +109,23 @@ func initCasbinPolicy() {
 }
 */
 
-func markTraceFilter(w http.ResponseWriter, r *http.Request) bool {
+type traceMiddleware struct {
+	handler http.Handler
+}
+
+func wrapBeegoMiddleware(h http.Handler) http.Handler {
+	m := &traceMiddleware{
+		handler: h,
+	}
+	return m
+}
+
+func (m *traceMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	clientID := r.Header.Get(clienIdTag)
 	if clientID != "" {
 		trace.EnsureHttpSpan(r)
 	}
-	return true
+	m.handler.ServeHTTP(w, r)
 }
 
 func main() {
@@ -122,9 +133,9 @@ func main() {
 		beego.BConfig.WebConfig.DirectoryIndex = true
 		beego.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 	}
-	beego.BConfig.RunMode = "prod"
+	//beego.BConfig.RunMode = "prod"
 	beego.BConfig.Log.AccessLogs = false
-	beego.BConfig.WebConfig.AutoRender = false
+	//beego.BConfig.WebConfig.AutoRender = false
 
 	// read server configs from file
 	m := multiconfig.NewWithPath("./conf/server.toml") // supports TOML and JSON
@@ -163,16 +174,6 @@ func main() {
 
 	interceptorClient.Enable3rdDBMetrics(prisma.MongoName)
 
-	// intercept http handler
-	httpHandler := interceptorClient.HTTPHandler(
-		beego.BeeApp.Handlers, // 使用beego handlers 的结构处理 HTTP 请求
-		prisma.UsingFilter("/*", markTraceFilter))
-
-	server := &http.Server{
-		Handler: httpHandler,
-		Addr:    fmt.Sprintf(":%d", beego.BConfig.Listen.HTTPPort),
-	}
-
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGQUIT)
 	go func(c chan os.Signal) {
@@ -188,7 +189,7 @@ func main() {
 			discovery.WithRegisterTTL(time.Duration(beego.AppConfig.DefaultInt("servicettl", 15))*time.Second))
 		if err != nil {
 			log.Printf("init etcd register failed with:%s", err.Error())
-			server.Shutdown(context.Background())
+			beego.BeeApp.Server.Shutdown(context.Background())
 			return
 		}
 		register.Register()
@@ -197,12 +198,10 @@ func main() {
 		logrus.Infof("receive signal '%s', stop http server", s.String())
 		register.Unregister()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		server.Shutdown(ctx)
+		beego.BeeApp.Server.Shutdown(ctx)
 		cancel()
 	}(ch)
 
 	logrus.Infof("start http server on port:%d", beego.BConfig.Listen.HTTPPort)
-	if err := server.ListenAndServe(); err != nil {
-		fmt.Println("http server exit:", err)
-	}
+	beego.RunWithMiddleWares(fmt.Sprintf(":%d", beego.BConfig.Listen.HTTPPort), wrapBeegoMiddleware, interceptorClient.BeegoMiddleware)
 }

@@ -6,7 +6,7 @@
 */
 
 .bg-img{
-    background: url(/static/img/login_bg.jpg) fixed center center;
+    background: #e0e0e0 url(/static/img/login_bg.jpg) no-repeat fixed center;
 }
 
 body {
