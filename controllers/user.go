@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"strconv"
 	"encoding/json"
 	"github.com/astaxie/beego"
 	
@@ -24,7 +25,7 @@ func (u *UserController) Post() {
 	var user models.User
 	json.Unmarshal(u.Ctx.Input.RequestBody, &user)
 	uid := models.AddUser(user)
-	u.Data["json"] = map[string]string{"uid": uid}
+	u.Data["json"] = map[string]string{"uid": strconv.FormatInt(uid, 10)}
 	u.ServeJSON()
 }
 

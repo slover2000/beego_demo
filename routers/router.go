@@ -25,11 +25,16 @@ func init() {
 				&controllers.UserController{},
 			),
 		),
+		beego.NSNamespace("/api",
+			beego.NSInclude(
+				&controllers.CaptchaController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 
-	beego.Router("/", &controllers.HomeController{}, "*:Login")
-	beego.Router("/home", &controllers.HomeController{}, "*:Login")
+	beego.Router("/", &controllers.LoginController{}, "*:ShowPage")
+	beego.Router("/home", &controllers.HomeController{}, "*:Index")
 	beego.Router("/login", &controllers.LoginController{}, "*:Login")
 	beego.Router("/logout", &controllers.LoginController{}, "*:Logout")	
 }

@@ -9,7 +9,3 @@ func (c *HomeController) Index() {
 	c.Data["pageTitle"] = "系统首页"
 	c.renderTemplate("main")
 }
-
-func (c *HomeController) Login() {
-	c.TplName = "login.html"
-}

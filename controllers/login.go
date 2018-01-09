@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"strings"
+	"html/template"
 
 	"github.com/astaxie/beego"
 	"github.com/slover2000/beego_demo/models"
@@ -9,18 +10,19 @@ import (
 
 // LoginController login controller
 type LoginController struct {
-	baseController
+	beego.Controller
+}
+
+func (c *LoginController) Prepare() {
+	c.Data["version"] = beego.AppConfig.String("site.version")
+	c.Data["siteName"] = beego.AppConfig.String("site.name")
 }
 
 //Login TODO:XSRF过滤
-func (c *LoginController) Login() {
-	if c.userID > 0 {
-		c.Redirect(beego.URLFor("HomeController.Index"), 302)
-	}
-	
+func (c *LoginController) Login() {	
 	errorMsg := ""
-	username := strings.TrimSpace(c.GetString("username"))
-	password := strings.TrimSpace(c.GetString("password"))
+	username := template.HTMLEscapeString(strings.TrimSpace(c.GetString("username")))
+	password := template.HTMLEscapeString(strings.TrimSpace(c.GetString("password")))
 	if username != "" && password != "" {
 		user, err := models.GetAndVerifyUser(username, password)
 		if err != nil {
@@ -30,7 +32,7 @@ func (c *LoginController) Login() {
 			if err == nil {
 				defer sess.SessionRelease(c.Ctx.ResponseWriter.ResponseWriter)
 				sess.Set("uid", user.Id)
-				sess.Set("name", user.Username)				
+				sess.Set("name", user.Name)				
 			}
 		}
 
@@ -53,10 +55,10 @@ func (c *LoginController) Logout() {
 	c.Redirect(beego.URLFor("HomeController.Login"), 302)
 }
 
-func (c *LoginController) NoAuth() {
-	c.Ctx.WriteString("没有权限")
+func (c *LoginController) ShowPage() {
+	c.Data["xsrfdata"] = template.HTML(c.XSRFFormHTML())
+	c.TplName = "login.html"
 }
-
 
 func (c *LoginController) Register() {
 

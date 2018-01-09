@@ -7,6 +7,14 @@ import (
 
 func init() {
 
+	beego.GlobalControllerRouter["github.com/slover2000/beego_demo/controllers:CaptchaController"] = append(beego.GlobalControllerRouter["github.com/slover2000/beego_demo/controllers:CaptchaController"],
+		beego.ControllerComments{
+			Method: "GenerateCaptcha",
+			Router: `/captcha`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams: param.Make(),
+			Params: nil})
+
 	beego.GlobalControllerRouter["github.com/slover2000/beego_demo/controllers:ObjectController"] = append(beego.GlobalControllerRouter["github.com/slover2000/beego_demo/controllers:ObjectController"],
 		beego.ControllerComments{
 			Method: "Post",

@@ -27,7 +27,7 @@ type responseData struct {
 type baseController struct {
 	beego.Controller
 	permission bool
-	userID     uint64
+	userID     int64
 	userName   string
 }
 
@@ -80,16 +80,11 @@ func (c *baseController) Prepare() {
 }
 
 func (c *baseController) authenticate() bool {
-	controllerName, actionName := c.GetControllerAndAction()
-	if controllerName == "HomeController" && actionName == "Login" {
-		return false
-	}
-
 	req := c.Ctx.Request
 	resp := c.Ctx.ResponseWriter.ResponseWriter
 	sess, err := globalSessions.SessionStart(resp, req)
 	if err != nil {
-		c.Redirect(beego.URLFor("HomeController.Login"), 302)
+		c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
 		return false
 	}
 	defer sess.SessionRelease(resp)
@@ -97,7 +92,7 @@ func (c *baseController) authenticate() bool {
 	id := sess.Get("uid")
 	name := sess.Get("name")
 	if id != nil {
-		c.userID = id.(uint64)
+		c.userID = id.(int64)
 	}
 	if name != nil {
 		c.userName = name.(string)
@@ -115,7 +110,7 @@ func (c *baseController) authenticate() bool {
 		if isAjax != "" {
 			c.ajaxFailure(STATUS_PERMISSION_DENY, "没有权限")
 		} else {
-			c.Redirect(beego.URLFor("HomeController.Login"), 302)
+			c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
 		}
 		return false
 	}
