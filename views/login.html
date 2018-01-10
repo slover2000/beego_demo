@@ -33,17 +33,18 @@
         </div>
         <script src="/static/layui/layui.js?t=1504439386550" charset="utf-8"></script>
         <script type="text/javascript">
-            layui.use(['layer','form'], function(){   
+            layui.use(['layer','form'], function() { 
                 var layer = layui.layer; //弹层
                 var form = layui.form;
                 var error_info = "{{.flash.error}}";
                 if(error_info){
                     layer.msg(error_info,{time:2000,offset: '100px'});
-                }               
+                }
+
+                form.on('select(login)', function(data) {
+                    layer.msg(JSON.stringify(data.field));                
+                });
             })
-            form.on('select(login)', function(data) {
-                layer.msg(JSON.stringify(data.field));                
-            });
         </script>
     </body>
 </html>

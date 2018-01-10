@@ -9,6 +9,8 @@ import (
 	"github.com/casbin/beego-orm-adapter"
 	"github.com/casbin/casbin"
 	"github.com/gogap/logrus"
+
+	"github.com/slover2000/beego_demo/models"
 )
 
 const (
@@ -16,6 +18,7 @@ const (
 	STATUS_PERMISSION_DENY = -1
 
 	ajaxTagParameter = "x-ajax-key"
+	adminRoleName    = "admin"
 )
 
 type responseData struct {
@@ -25,8 +28,7 @@ type responseData struct {
 }
 
 type baseController struct {
-	beego.Controller
-	permission bool
+	beego.Controller	
 	userID     int64
 	userName   string
 }
@@ -76,8 +78,7 @@ func init() {
 func (c *baseController) Prepare() {
 	c.Data["version"] = beego.AppConfig.String("site.version")
 	c.Data["siteName"] = beego.AppConfig.String("site.name")
-	if c.authenticate() {
-		c.permission = true	
+	if c.authenticate() {		
 		c.Data["userName"] = c.userName
 	}
 }
@@ -117,7 +118,46 @@ func (c *baseController) authenticate() bool {
 		}
 		return false
 	}
+
+	roles := enforcer.GetRolesForUser(c.userName)
+	c.setupUserMenu(roles)
 	return true
+}
+
+func (c *baseController) setupUserMenu(roles []string) {
+	// 左侧导航栏
+	menus := make([]models.MenuItem, 0)
+	for i := range roles {
+		if strings.EqualFold(roles[i], adminRoleName) {
+			permissionMenu := models.MenuItem{
+				Name: "权限管理",
+				Icon: "fa-id-card",
+			}
+	
+			subMenuItems := make([]models.SubmenuItem, 0)
+			subMenuItems = append(subMenuItems, models.SubmenuItem{
+				ID: 1,
+				Name: "用户管理",
+				Icon: "fa-id-badge",
+				URL: "/admin/users",
+			})
+			subMenuItems = append(subMenuItems, models.SubmenuItem{
+				ID: 2,
+				Name: "角色管理",
+				Icon: "fa-user-circle-o",
+				URL: "/admin/roles",
+			})		
+			subMenuItems = append(subMenuItems, models.SubmenuItem{
+				ID: 3,
+				Name: "权限管理",
+				Icon: "fa-list",
+				URL: "/admin/permissions",
+			})
+			permissionMenu.Children = subMenuItems
+			menus = append(menus, permissionMenu)
+		}
+	}
+	c.Data["SideMenu"] = menus
 }
 
 func (c *baseController) renderTemplate(tpl string) {
@@ -130,7 +170,18 @@ func (c *baseController) renderTemplate(tpl string) {
 	}
 	c.Layout = "layout.html"
 	c.TplName = tplname
-	c.LayoutSections = layoutSections	
+	c.LayoutSections = layoutSections
+}
+
+func (c *baseController) renderNestedTemplate(tpl string) {
+	var tplname string
+	if tpl != "" {
+		tplname = strings.Join([]string{tpl, "html"}, ".")
+	} else {
+		controllerName, actionName := c.GetControllerAndAction()
+		tplname = fmt.Sprintf("%s/%s.html", controllerName, actionName)
+	}
+	c.TplName = tplname
 }
 
 func (c *baseController) ajaxSuccess(data interface{}) {

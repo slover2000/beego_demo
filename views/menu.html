@@ -1,26 +1,18 @@
-<div class="layui-side-scroll">
-    <div class="kit-side-fold"><i class="fa fa-navicon" aria-hidden="true"></i></div>
-    <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
-    <ul class="layui-nav layui-nav-tree" lay-filter="kitNavbar">
-        {{range $index, $elem := .SideMenu1}}
-            {{if $elem}}
-            <li class="layui-nav-item ">
-                <a class="" href="javascript:;">
-                    <i class="fa {{$elem.Icon}}"></i> &nbsp;&nbsp;<span>{{$elem.AuthName}}</span>
-                </a>
-                <dl class="layui-nav-child">
-                    {{range $i, $e := $.SideMenu2}}
-                        {{if eq $e.Pid $elem.Id}}
-                            <dd>
-                                <a data-url="{{$e.AuthUrl}}" data-icon="&#xe715;" data-title="{{$e.AuthName}}" kit-target data-id="{{$e.Id}}">
-                                    <i class="fa {{$e.Icon}}"></i>  &nbsp;&nbsp;<span>{{$e.AuthName}}</span>
-                                </a>
-                            </dd>
-                        {{end}}
-                    {{end}}
-                </dl>
-            </li>
+{{range $index, $elem := .SideMenu}}
+    {{if $elem}}
+    <li class="layui-nav-item">
+        <a href="javascript:;">
+            <i class="fa {{$elem.Icon}}"></i>&nbsp;&nbsp;<span>{{$elem.Name}}</span>
+        </a>
+        <dl class="layui-nav-child">
+            {{range $i, $e := $elem.Children}}                        
+                <dd>
+                    <a href="javascript:;" data-url="{{$e.URL}}" data-title="{{$e.Name}}" kit-target data-id="{{$e.ID}}">
+                        <i class="fa {{$e.Icon}}"></i>&nbsp;&nbsp;<span>{{$e.Name}}</span>
+                    </a>
+                </dd>
             {{end}}
-        {{end}}
-    </ul>
-</div>
+        </dl>
+    </li>
+    {{end}}
+{{end}}

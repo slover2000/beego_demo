@@ -4,10 +4,6 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <title>{{.siteName}}</title>
-        {{if .zTree}}
-        <link rel="stylesheet" href="/static/zTree3/css/demo.css?t=5" type="text/css">
-        <link rel="stylesheet" href="/static/zTree3/css/zTreeStyle/zTreeStyle.css" type="text/css">
-        {{end}}
         <link rel="stylesheet" href="/static/layui/css/layui.css">
         <link rel="stylesheet" href="/static/css/main.css?s=1223">
         <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" media="all">        
@@ -29,9 +25,15 @@
                 </ul>
             </div>
             <div class="layui-side layui-bg-black kit-side">
-                {{.MenuContent}}
-            </div>            
-            <div class="layui-body" id="container">
+                <div class="layui-side-scroll">
+                    <div class="kit-side-fold"><i class="fa fa-navicon" aria-hidden="true"></i></div>
+                    <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+                    <ul class="layui-nav layui-nav-tree" lay-filter="cmsMenu">
+                        {{.MenuContent}}
+                    </ul>
+                </div>                                
+            </div>   
+            <div class="layui-body">
                 <div class="nav-title">
                         <div class="tl fl">
                             {{.pageTitle}}
@@ -40,8 +42,10 @@
                             <button class="layui-btn layui-btn-radius layui-btn-primary layui-btn-xs" onclick="javascript:history.go(-1);"><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
                             <button class="layui-btn layui-btn-radius layui-btn-primary layui-btn-xs" onclick="javascript:window.location.reload();"><i class="fa fa-refresh" aria-hidden="true"></i></button>
                         </div>                    
-                </div>           
-                {{.LayoutContent}}
+                </div>
+                <div id="container">
+                    {{.LayoutContent}}
+                </div>                
             </div>
 
             <div class="layui-footer">
@@ -52,19 +56,29 @@
 
         <script src="/static/layui/layui.js?s=36"></script>
         <script>
-            var message;
             layui.config({
                 base: '/static/js/'
-            }).use(['app', 'message'], function() {
-                var app = layui.app,
-                    $ = layui.jquery,
+            }).use(['index'], function() {
+                var $ = layui.$,
                     layer = layui.layer;
-                //将message设置为全局以便子页面调用
-                message = layui.message;
-                //主入口
-                app.set({
-                    type: 'iframe'
-                }).init();
+                    element = layui.element;
+
+                //监听导航点击
+                element.on('nav(cmsMenu)', function(elem){
+                    elem.find("a[kit-target]").each(function(i, e) {
+                        $.ajax({
+                            method: "GET",
+                            url: $(e).data('url'),
+                            data: { name: "John", location: "Boston" }
+                        })
+                        .done(function(msg) {
+                            $('#container').html(msg);
+                        })
+                        .fail(function() {
+                            layer.msg("加载" + elem.text() + "失败");
+                        });                     
+                    })                    
+                });                    
             });
         </script>
     </body>

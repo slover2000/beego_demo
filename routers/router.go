@@ -37,4 +37,7 @@ func init() {
 	beego.Router("/home", &controllers.HomeController{}, "*:Index")
 	beego.Router("/login", &controllers.LoginController{}, "*:Login")
 	beego.Router("/logout", &controllers.LoginController{}, "*:Logout")	
+	beego.Router("/admin/users", &controllers.AdminController{}, "GET:ListUsers")
+	beego.Router("/admin/roles", &controllers.AdminController{}, "GET:ListRoles")
+	beego.Router("/admin/permissions", &controllers.AdminController{}, "GET:ListPermissions")
 }
