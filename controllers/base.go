@@ -33,6 +33,7 @@ type baseController struct {
 
 var enforcer *casbin.SyncedEnforcer
 var globalSessions *session.Manager
+var layoutSections map[string]string
 
 func initCasbinPolicy() {
 	// Initialize a Beego ORM adapter and use it in a Casbin enforcer:
@@ -66,6 +67,8 @@ func initSessionManager() {
 }
 
 func init() {
+	layoutSections = make(map[string]string)
+	layoutSections["MenuContent"] = "menu.html"
 	initSessionManager()
 	initCasbinPolicy()
 }
@@ -127,6 +130,7 @@ func (c *baseController) renderTemplate(tpl string) {
 	}
 	c.Layout = "layout.html"
 	c.TplName = tplname
+	c.LayoutSections = layoutSections	
 }
 
 func (c *baseController) ajaxSuccess(data interface{}) {
