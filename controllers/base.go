@@ -16,8 +16,7 @@ import (
 const (
 	STATUS_OK              = 0
 	STATUS_PERMISSION_DENY = -1
-
-	ajaxTagParameter = "x-ajax-key"
+	
 	adminRoleName    = "admin"
 )
 
@@ -25,6 +24,13 @@ type responseData struct {
 	status  int         `json:"status"`
 	message string      `json:"msg"`
 	data    interface{} `json:"data"`
+}
+
+type tableData struct {
+	Status  int         `json:"status"`
+	Message string      `json:"msg"`
+	Total   int         `json:"total"`
+	Rows    interface{} `json:"rows"`
 }
 
 type baseController struct {
@@ -109,9 +115,8 @@ func (c *baseController) authenticate() bool {
 			"path":   req.URL.Path,
 			"method": req.Method,
 		}).Warn("permission deny")
-
-		isAjax := req.Header.Get(ajaxTagParameter)
-		if isAjax != "" {
+		
+		if c.IsAjax() {
 			c.ajaxFailure(STATUS_PERMISSION_DENY, "没有权限")
 		} else {
 			c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
@@ -181,6 +186,7 @@ func (c *baseController) renderNestedTemplate(tpl string) {
 		controllerName, actionName := c.GetControllerAndAction()
 		tplname = fmt.Sprintf("%s/%s.html", controllerName, actionName)
 	}
+	c.Layout = "body_container.html"
 	c.TplName = tplname
 }
 

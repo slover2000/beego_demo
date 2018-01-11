@@ -1,6 +1,7 @@
 package models
 
 import (
+	"log"
 	"errors"
 	"fmt"
 	"strconv"
@@ -50,20 +51,20 @@ type User struct {
 }
 
 type User2 struct {
-	Id         int64  `gorm:"primary_key;AUTO_INCREMENT"`
-	Name       string  `gorm:"not null;unique;column:name;"`
-	Password   string  `gorm:"not null"`
-	CreateTime time.Time 
-	UpdateTime time.Time
-	Profile    string
-	Profile2   Profile `gorm:"-"`
+	Id         int64  `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
+	Name       string  `gorm:"not null;unique;column:name;" json:"name"`
+	Password   string  `gorm:"not null" json:"-"`
+	CreateTime time.Time `json:"create_time"`
+	UpdateTime time.Time `json:"update_time"`
+	Profile    string    `json:"-"`
+	Profile2   Profile `gorm:"-" json:"profile"`
 }
 
 type Profile struct {
-	Gender  string `bson:"gender"`
-	Age     int    `bson:"age"`
-	Address string `bson:"address"`
-	Email   string `bson:"email"`
+	Gender  string `bson:"gender" json:"gender"`
+	Age     int    `bson:"age" json:"age"`
+	Address string `bson:"address" json:"address"`
+	Email   string `bson:"email" json:"email"`
 }
 
 func (u *User2) BeforeCreate() error {
@@ -160,15 +161,6 @@ func DeleteUser(uid string) {
 }
 
 const (
-	// CaptchaWidth is width of image
-	CaptchaWidth = 110
-
-	// CaptchaHeight is height of image
-	CaptchaHeight = 45
-
-	// CaptchaCodeLen is the length of code
-	CaptchaCodeLen = 4
-
 	// BcryptCost is the strength of encryption
 	BcryptCost = 12
 )
@@ -190,4 +182,16 @@ func GetAndVerifyUser(name, password string) (*User2, error) {
 		return user, nil
 	}
 	return nil, errors.New("user name or password is wrong")
+}
+
+func GetUsers(offset, limit int) ([]User2, int) {
+	var count int	
+	var users []User2
+	err := gormDB.Select("id, name, create_time, profile").Offset(offset).Limit(limit).Find(&users).Error
+	if err != nil {
+		log.Printf("query failed:%v", err)
+	}
+	gormDB.Table("user2").Count(&count)
+
+	return users, count
 }
