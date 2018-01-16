@@ -1,0 +1,54 @@
+<form class="layui-form" action="" style="margin:10px;">
+    {{ .xsrfdata }}    
+    <div class="layui-form-item">
+        <label class="layui-form-label">名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="name" lay-verify="required|rolename"  autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="create">提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+<script>
+    layui.use(['form'], function(){
+        var form = layui.form
+        ,layer = layui.layer
+        ,$ = layui.$ 
+        
+        //自定义验证规则
+        form.verify({
+          rolename: function(value){
+            if(value.length < 3) {
+                return '名字至少得3个字符啊';
+            }
+            if(/(^\_)|(\__)|(\_+$)/.test(value)){
+              return '名字首尾不能出现下划线\'_\'';
+            }
+            if(/^\d+\d+\d$/.test(value)){
+              return '名字不能全为数字';
+            }              
+          },
+        });
+        
+        //监听提交
+        form.on('submit(create)', function(data){     
+            $.post("/admin/role", data.field, function(resp) {
+              if (resp.status != 0){
+                  layer.msg(resp.msg, {time: 1000});
+              } else {
+                  layer.closeAll('page');
+              }              
+            })
+            .fail(function() {
+              layer.msg('创建角色失败');
+            })
+            return false;
+        });
+        // must invoke render because the form is dynamically built
+        form.render();
+    });
+</script>

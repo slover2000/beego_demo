@@ -4,11 +4,12 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <title>{{.siteName}}</title>
-        <link rel="stylesheet" href="/static/layui/css/layui.css">
-        <link rel="stylesheet" href="/static/css/main.css?s=1223">
-        <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" media="all">        
-        <script src="/static/layui/layui.js?s=36"></script>
-        <script src="/static/js/lodash.min.js?s=36"></script>  
+        <link rel="stylesheet" href="/static/layui/css/layui.css" media="all">        
+        <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" media="all">
+        <link rel="stylesheet" href="/static/css/main.css?s=1224">
+        <!-- <link rel="stylesheet" href="/static/css/animate.min.css"> -->
+        <script src="/static/layui/layui.js?s=36" charset="utf-8"></script>
+        <script src="/static/js/lodash.min.js?s=36" charset="utf-8"></script>  
     </head>
     <body>
         <div class="layui-layout layui-layout-admin kit-layout-admin">
@@ -33,18 +34,7 @@
                 </div>                                
             </div>   
             <div id="container" class="layui-body">
-                <div class="nav-title">
-                        <div class="tl fl">
-                            {{.pageTitle}}
-                        </div>
-                        <div class="tr fr">
-                            <button class="layui-btn layui-btn-radius layui-btn-primary layui-btn-xs" onclick="javascript:history.go(-1);"><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
-                            <button class="layui-btn layui-btn-radius layui-btn-primary layui-btn-xs" onclick="javascript:window.location.reload();"><i class="fa fa-refresh" aria-hidden="true"></i></button>
-                        </div>                    
-                </div>
-                <div>
-                    {{.LayoutContent}}
-                </div>
+                {{.LayoutContent}}
             </div>
 
             <div class="layui-footer">
@@ -66,16 +56,27 @@
                         $.ajax({
                             method: "GET",
                             url: $(e).data('url'),
-                            data: { name: "John", location: "Boston" }
                         })
                         .done(function(msg) {
-                            $('#container').html(msg);
+                            $('#container').html(msg);                           
                         })
                         .fail(function() {
-                            layer.msg("加载" + elem.text() + "失败");
-                        });                     
-                    })                    
-                });                    
+                            layer.msg('加载"'+elem.text()+'"失败');
+                        });
+                    })
+                });
+                $.fn.extend({
+                    animateCss: function (animationName, callback) {
+                        var animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+                        this.addClass('animated ' + animationName).one(animationEnd, function() {
+                            $(this).removeClass('animated ' + animationName);
+                            if (callback) {
+                                callback();
+                            }
+                        });
+                        return this;
+                    }
+                });
             });
         </script>
     </body>

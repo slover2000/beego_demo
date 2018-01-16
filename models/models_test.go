@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -15,6 +16,7 @@ func TestPostgresJsonbORM(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	defer db.Close()
 
 	// db.LogMode(true)
 	passwd, _ := encryptPassword("123456")
@@ -64,4 +66,70 @@ func TestPostgresJsonbORM(t *testing.T) {
 	}	
 	db.Delete(&classRoom)
 	db.Unscoped().Delete(&classRoom)
+}
+
+func TestAdminPermission(t *testing.T) {
+	db, err := gorm.Open("postgres", "dbname=beego user=beego_group password=123456 host=127.0.0.1 port=5432 sslmode=disable")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	db.SingularTable(true)
+
+	db.Debug().Delete(&CasbinPermission{Model: Model{ID: 8}})
+	db.Debug().Where("id IN (?)", []uint{11, 12}).Delete(CasbinPermission{})
+	
+	p := CasbinPermission{
+		Name: "test",
+		Resource: "/url/r",
+		Action: "GET",
+	}
+	// AutoMigrate
+	db.DropTable(&CasbinPermission{})
+	if !db.HasTable(&CasbinPermission{}) {
+		db.Debug().AutoMigrate(&CasbinPermission{})	
+	}
+	
+	db.DropTable(&CasbinGroup{})
+	if !db.HasTable(&CasbinGroup{}) {
+		db.Debug().CreateTable(&CasbinGroup{})		
+	}	
+
+	err = db.Debug().Save(&p).Error
+	if err != nil {
+		t.Errorf("save permission failed:%v", err)
+		return
+	}	
+	g := CasbinGroup{
+		Name: "group",
+		Permissions: make([]CasbinPermission, 0),
+	}
+	g.Permissions = append(g.Permissions, p)
+
+	err = db.Debug().Save(&g).Error
+	if err != nil {
+		t.Errorf("save permission group failed:%v", err)
+		return
+	}
+	g.Permissions = append(g.Permissions, CasbinPermission{Name: "test2", Resource: "/url/2", Action: "POST"})
+	err = db.Debug().Save(&g).Error
+
+	g2 := &CasbinGroup{}
+	var p2 []CasbinPermission
+	db.Debug().First(&g2, 1).Association("Permissions").Find(&p2)
+	g2.Permissions = p2
+	log.Printf("permissions:%d", len(g2.Permissions))
+
+	var g3 []CasbinGroup
+	err = db.Debug().Preload("Permissions").Find(&g3).Error // load all permissions associated with group in one shot
+	if err != nil {
+		t.Errorf("save permission group failed:%v", err)
+		return
+	}	
+
+	p3 := &CasbinPermission{Name: "test3", Resource: "/url/3", Action: "PUT"}
+	db.Debug().Save(p3)
+	gormDB.Model(&CasbinGroup{Model: gorm.Model{ID: g2.ID}}).Association("Permissions").Replace([]CasbinPermission{CasbinPermission{Model: Model{ID: p3.ID}}})
+
+	db.Debug().Model(&g).Association("Permissions").Delete(&p)
 }

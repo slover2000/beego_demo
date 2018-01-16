@@ -1,11 +1,11 @@
 {{range $index, $elem := .SideMenu}}
     {{if $elem}}
-    <li class="layui-nav-item">
+    <li class="layui-nav-item {{if eq $.DefaultMenu $elem.ID}}layui-nav-itemed{{end}}">
         <a href="javascript:;">
             <i class="fa {{$elem.Icon}}"></i>&nbsp;&nbsp;<span>{{$elem.Name}}</span>
         </a>
         <dl class="layui-nav-child">
-            {{range $i, $e := $elem.Children}}                        
+            {{range $i, $e := $elem.Children}}
                 <dd>
                     <a href="javascript:;" data-url="{{$e.URL}}" data-title="{{$e.Name}}" kit-target data-id="{{$e.ID}}">
                         <i class="fa {{$e.Icon}}"></i>&nbsp;&nbsp;<span>{{$e.Name}}</span>

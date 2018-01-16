@@ -42,17 +42,17 @@ func (c *LoginController) Login() {
 			flash := beego.NewFlash()
 			flash.Error(errorMsg)
 			flash.Store(&c.Controller)
-			c.Redirect(beego.URLFor("HomeController.login"), 302)
+			c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
 		}
 	} else {
-		c.Redirect(beego.URLFor("HomeController.login"), 302)
+		c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
 	}
 }
 
 // Logout user log out from system
 func (c *LoginController) Logout() {
-	globalSessions.SessionDestroy(c.Ctx.ResponseWriter.ResponseWriter, c.Ctx.Request)
-	c.Redirect(beego.URLFor("HomeController.Login"), 302)
+	globalSessions.SessionDestroy(c.Ctx.ResponseWriter.ResponseWriter, c.Ctx.Request)	
+	c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
 }
 
 func (c *LoginController) ShowPage() {

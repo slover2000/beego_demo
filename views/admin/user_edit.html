@@ -1,0 +1,89 @@
+<form class="layui-form" action="" style="margin:10px;">
+    {{ .xsrfdata }}
+    <input type="hidden" name="id" value="{{.uid}}"/>
+    <div class="layui-form-item">
+        <label class="layui-form-label">用户名</label>
+        <div class="layui-input-block">
+            <input type="text" name="name" class="layui-input" value="{{.username}}" disabled="disabled">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">年龄</label>
+        <div class="layui-input-inline">
+        <input type="tel" name="age" lay-verify="required|number" autocomplete="off" class="layui-input" value="{{.age}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">性别</label>
+        <div class="layui-input-block">
+            <select name="gender" lay-filter="gender">
+                <option value="0" {{if eq .gender "male"}}selected="selected"{{end}}>男</option>
+                <option value="1" {{if ne .gender "male"}}selected="selected"{{end}}>女</option>
+            </select>
+        </div>
+    </div>        
+    <div class="layui-form-item">
+        <label class="layui-form-label">Email</label>
+        <div class="layui-input-block">
+            <input type="text" name="email" lay-verify="required|email" autocomplete="off" placeholder="请输入Email" class="layui-input" value="{{.email}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">住址</label>
+        <div class="layui-input-block">
+            <input type="text" name="addr" autocomplete="off" placeholder="请输入住址" class="layui-input" value="{{.addr}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="edit">提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+<script>
+    layui.use(['form'], function(){
+        var form = layui.form
+        ,layer = layui.layer
+        ,$ = layui.$ 
+        
+        //自定义验证规则
+        form.verify({
+            name: function(value){
+                if(value.length < 3) {
+                    return '名字至少得3个字符啊';
+                }
+            }
+            ,pass: [/(.+){6,12}$/, '密码必须6到12位']
+            ,content: function(value){
+                layedit.sync(editIndex);
+            }
+        });
+        
+        //监听提交
+        form.on('submit(edit)', function(data){
+            $.ajax({
+                method: "PUT",
+                url: '/admin/user',
+                data: data.field,
+                dataType: 'json',
+                success: function(resp) {
+                    if (resp.status != 0){
+                        layer.msg(resp.msg, {time: 1000});
+                    } else {
+                        layer.closeAll('page');
+                    }
+                },
+            })
+            .fail(function() {
+                layer.msg('更新数据失败', {time: 1000});
+            })
+            // layer.alert(JSON.stringify(data.field), {
+            //     title: '最终的提交信息'
+            // })
+            return false;
+        });
+        // must invoke render because the form is dynamically built
+        form.render();   
+    });
+</script>

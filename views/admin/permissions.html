@@ -1,3 +1,166 @@
-<div class="layui-row ml20">
-权限列表
+<div class="layui-row">
+  <input id="xsrf_token" type="hidden" name="_xsrf" value="{{.xsrf_token}}"/>
+  <div class="layui-collapse" lay-filter="group">
+  {{range $index, $elem := .permissGroup}}
+    {{if $elem}}
+    <div class="layui-colla-item">
+      <h2 class="layui-colla-title">
+        <i class="fa fa-lock" aria-hidden="true">&nbsp;&nbsp;{{$elem.Name}}</i>      
+      </h2>
+      <div class="layui-colla-content">
+        <div class="layui-row">
+            <div class="kit-right-align-sm">
+                <button id='{{printf "new_permission_%d" $elem.ID}}' class="layui-btn layui-btn-sm">增加权限</button>
+                <button id='{{printf "del_group_%d" $elem.ID}}'class="layui-btn layui-btn-danger layui-btn-sm">删除全部</button>                
+            </div>
+        </div>
+        <table lay-data='{id: "{{printf "tab_%d" $elem.ID}}"}' lay-filter='{{printf "tab_%d" $elem.ID}}'>
+          <thead>
+            <tr>
+              <th lay-data="{field:'ID', width:80}">ID</th>
+              <th lay-data="{field:'name', width:120}">名字</th>
+              <th lay-data="{field:'resource', sort: true, width:150}">资源</th>
+              <th lay-data="{field:'action', width:120}">动作</th>
+              <th lay-data="{fixed:'right', align:'center', toolbar: '#toolBar'}">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range $i, $e := $elem.Permissions}}
+            <tr>
+              <td>{{$e.ID}}</td>
+              <td>{{$e.Name}}</td>
+              <td>{{$e.Resource}}</td>
+              <td>{{$e.Action}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+      //转换静态表格
+      var table = layui.table;    
+      var $ = layui.$
+      table.init('{{printf "tab_%d" $elem.ID}}', {page: false, limit:1000,});
+      $('{{printf "#new_permission_%d" $elem.ID}}').on('click', function(){
+        $.ajax({
+          method: "GET",
+          url: '/admin/permission?group='+'{{$elem.ID}}',
+        })
+        .done(function(data) {
+            layer.open({
+                title: "创建权限",
+                area: '500px',
+                type: 1,
+                content: data, //注意，如果str是object，那么需要字符拼接。
+                end: function(){
+                    table.reload('{{printf "tab_%d" $elem.ID}}', {
+                      url: "/admin/group",
+                      where: {group: '{{$elem.ID}}'},
+                      page: false,
+                      response: {
+                        statusName: 'status'
+                        ,msgName: 'msg'
+                        ,countName: 'total'
+                        ,dataName: 'rows'
+                      }
+                    });
+                    return false; 
+                },
+            });
+        })
+        .fail(function() {
+          layer.msg('加载失败');
+        });
+      });
+
+      $('{{printf "#del_group_%d" $elem.ID}}').on('click', function(){
+        layer.confirm('真的要删除权限组"{{$elem.Name}}"吗？', {icon: 3, title:'删除确认'}, function(index){
+          layer.close(index);     
+          $.ajax({
+            method: "DELETE",
+            url: '/admin/group?group={{$elem.ID}}',
+            headers: {'X-Xsrftoken': $('#xsrf_token').val()}, // xsrf token                
+            dataType: 'json',
+            success: function(resp) {
+                if (resp.status != 0){
+                    layer.msg(resp.msg, {time: 1000});
+                } else {
+                  window.location.replace('/home?menu=1');         
+                }
+            },
+          })
+          .fail(function() {
+            layer.msg('删除权限组"{{$elem.Name}}"失败');
+          });
+        });
+      });      
+
+      //监听工具条
+      table.on('tool({{printf "tab_%d" $elem.ID}})', function(obj){ //注：tool是工具条事件名，toolbar是table原始容器的属性 lay-filter="对应的值"
+        var data = obj.data; //获得当前行数据
+        var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+        var tr = obj.tr; //获得当前行 tr 的DOM对象
+        if(layEvent === 'del'){ //删除        
+          layer.confirm('真的删除吗？', {icon: 3, title:'删除确认'}, function(index){
+            layer.close(index);              
+            $.ajax({
+              method: "DELETE",
+              url: '/admin/permission?id='+data.ID+'&group='+'{{$elem.ID}}',
+              headers: {'X-Xsrftoken': $('#xsrf_token').val()}, // xsrf token                
+              dataType: 'json',
+              success: function(resp) {
+                  if (resp.status != 0){
+                      layer.msg(resp.msg, {time: 1000});
+                  } else {
+                      obj.del(); //删除对应行（tr）的DOM结构，并更新缓存                        
+                  }
+              },
+            })
+            .fail(function() {
+              layer.msg('删除权限"' + data.name + '"失败');
+            });
+          });
+        }
+      });    
+    </script>
+    {{end}}
+  {{end}}
+  </div>
 </div>
+<div class="layui-row">
+    <div class="kit-right-align-sm" style="margin-top:10px;">        
+        <button id='new_group' class="layui-btn layui-btn-sm">增加权限组</button>
+    </div>
+</div>
+<script>
+layui.use(['element', 'layer', 'tablev2'], function(){
+  var element = layui.element;
+  var $ = layui.$
+  element.init();// 动态渲染collapse
+  // add new group
+  $('#new_group').on('click', function(){
+      $.ajax({
+        method: "GET",
+        url: '/admin/group',
+      })
+      .done(function(data) {
+          layer.open({
+              title: "创建权限组",
+              area: '500px',
+              type: 1,
+              content: data,
+              end: function(){
+                window.location.replace('/home?menu=1');
+              },
+          });
+      })
+      .fail(function() {
+        layer.msg('加载失败');
+      });
+    });
+});
+</script>
+<script type="text/html" id="toolBar">  
+  <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>

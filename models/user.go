@@ -39,25 +39,45 @@ func init() {
 		panic(err)
 	}
 	gormDB = db
+	gormDB.SingularTable(true)
+	if !gormDB.HasTable(&CasbinRole{}) {
+		gormDB.CreateTable(&CasbinRole{})	
+	}
 }
 
 type User struct {
 	Id         int64  `bson:"_id" gorm:"primary_key;AUTO_INCREMENT"`
 	Name       string  `bson:"name" gorm:"not null;unique;column:name;"`
 	Password   string  `bson:"password" gorm:"not null"`
-	CreateTime time.Time
-	UpdateTime time.Time
-	Profile    Profile `bson:"profile" db:"profile"`
+	CreateTime time.Time `gorm:"column:create_time"`
+	UpdateTime time.Time `gorm:"column:update_time"`
+	Profile    Profile `bson:"profile" gorm:"column:profile"`
 }
 
+type JSONTime time.Time
+
 type User2 struct {
-	Id         int64  `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
-	Name       string  `gorm:"not null;unique;column:name;" json:"name"`
-	Password   string  `gorm:"not null" json:"-"`
-	CreateTime time.Time `json:"create_time"`
-	UpdateTime time.Time `json:"update_time"`
-	Profile    string    `json:"-"`
-	Profile2   Profile `gorm:"-" json:"profile"`
+	Id         int64   `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
+	Name       string   `gorm:"not null;unique;column:name;" json:"name"`
+	Password   string   `gorm:"not null" json:"-"`
+	CreateTime time.Time `json:"create_time" gorm:"column:create_time"`
+	UpdateTime time.Time `json:"update_time" gorm:"column:update_time"`
+	Profile    string   `json:"-" gorm:"column:profile"`
+	Profile2   Profile  `gorm:"-" json:"profile"`
+}
+
+type UserResp struct {
+	Id         int64   `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
+	Name       string   `gorm:"not null;unique;column:name;" json:"name"`
+	CreateTime JSONTime `json:"create_time" gorm:"column:create_time"`
+	UpdateTime JSONTime `json:"update_time" gorm:"column:update_time"`	
+	Profile    Profile  `gorm:"-" json:"profile"`
+}
+
+func (t JSONTime) MarshalJSON() ([]byte, error) {
+	//do your serializing here
+    stamp := fmt.Sprintf("\"%s\"", time.Time(t).Format("2006-01-02 15:04:05"))
+    return []byte(stamp), nil
 }
 
 type Profile struct {
@@ -88,7 +108,8 @@ func (u *User2) AfterUpdate() {
 }
 
 func (u *User2) BeforeUpdate() error {
-	u.UpdateTime = time.Now()
+	now := time.Now()
+	u.UpdateTime = now
 	data, err := json.Marshal(&u.Profile2)
 	if err != nil {
 		return err
@@ -187,11 +208,43 @@ func GetAndVerifyUser(name, password string) (*User2, error) {
 func GetUsers(offset, limit int) ([]User2, int) {
 	var count int	
 	var users []User2
-	err := gormDB.Select("id, name, create_time, profile").Offset(offset).Limit(limit).Find(&users).Error
+	err := gormDB.Select("id, name, create_time, profile").Offset(offset).Limit(limit).Order("id asc").Find(&users).Error
 	if err != nil {
 		log.Printf("query failed:%v", err)
 	}
 	gormDB.Table("user2").Count(&count)
 
 	return users, count
+}
+
+func GetUser2(uid int64) (*User2, error) {
+	var user User2
+	err := gormDB.Where("id = ?", uid).First(&user).Error
+	return &user, err
+}
+
+func SaveUser2(u *User2) error {
+	data, err := json.Marshal(&u.Profile2)
+	if err != nil {
+		return err
+	}	
+	now := time.Now()
+	return gormDB.Model(u).UpdateColumns(map[string]interface{}{"profile": data, "update_time": now}).Error
+}
+
+func CreateUser2(u *User2) error {
+	passwordhash, err := encryptPassword(u.Password)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	u.Password = passwordhash
+	u.CreateTime = now
+	u.UpdateTime = now
+	return gormDB.Create(u).Error
+}
+
+func DeleteUser2(id int64) error {
+	return gormDB.Delete(&User2{Id: id}).Error
 }

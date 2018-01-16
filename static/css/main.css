@@ -331,6 +331,16 @@
 	border: 0
 }
 
+.kit-right-align-sm {
+	text-align: right;
+	margin-right: 20px;
+}
+
+.kit-left-align-sm {
+	text-align: left;
+	margin-right: 20px;
+}
+
 @media screen and (max-width:950px) {
 	.kit-layout-admin .layui-body,.kit-layout-admin .layui-footer,.kit-layout-admin .layui-layout-left {
 		left: 50px

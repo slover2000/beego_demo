@@ -1,0 +1,74 @@
+<form class="layui-form" action="" style="margin:10px;">
+    {{ .xsrfdata }}
+    <input id="group_id" type="hidden" name="group" value="{{.groupID}}"/>
+    <div class="layui-form-item">
+        <label class="layui-form-label">权限名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="name" lay-verify="required|permissionname"  autocomplete="off" class="layui-input">
+        </div>
+    </div>        
+    <div class="layui-form-item">
+        <label class="layui-form-label">资源</label>
+        <div class="layui-input-block">
+            <input type="text" name="resource" lay-verify="required" autocomplete="off" placeholder="请输入资源URI" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">动作</label>
+        <div class="layui-input-block">
+            <select name="action">
+                <option value="0">查询</option>
+                <option value="1">新建</option>
+                <option value="2">更新</option>
+                <option value="3">删除</option>
+                <option value="4">全部</option>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="create">提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+    <blockquote class="layui-elem-quote">填写完整的权限内容</blockquote>
+</form>
+<script>
+    layui.use(['form'], function(){
+        var form = layui.form
+        ,layer = layui.layer
+        ,$ = layui.$ 
+        
+        //自定义验证规则
+        form.verify({
+          permissionname: function(value){
+            if(value.length < 3) {
+                return '名字至少得3个字符啊';
+            }
+            if(/(^\_)|(\__)|(\_+$)/.test(value)){
+              return '权限名首尾不能出现下划线\'_\'';
+            }
+            if(/^\d+\d+\d$/.test(value)){
+              return '权限名不能全为数字';
+            }              
+          },
+        });
+        
+        //监听提交
+        form.on('submit(create)', function(data){     
+            $.post("/admin/permission", data.field, function(resp) {
+              if (resp.status != 0){
+                  layer.msg(resp.msg, {time: 1000});
+              } else {
+                  layer.closeAll('page');
+              }              
+            })
+            .fail(function() {
+              layer.msg('创建权限失败');
+            })
+            return false;
+        });
+        // must invoke render because the form is dynamically built
+        form.render();   
+    });
+</script>

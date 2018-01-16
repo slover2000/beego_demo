@@ -21,9 +21,9 @@ const (
 )
 
 type responseData struct {
-	status  int         `json:"status"`
-	message string      `json:"msg"`
-	data    interface{} `json:"data"`
+	Status  int         `json:"status"`
+	Message string      `json:"msg"`
+	Data    interface{} `json:"data"`
 }
 
 type tableData struct {
@@ -117,7 +117,7 @@ func (c *baseController) authenticate() bool {
 		}).Warn("permission deny")
 		
 		if c.IsAjax() {
-			c.ajaxFailure(STATUS_PERMISSION_DENY, "没有权限")
+			c.ajaxFailure(STATUS_PERMISSION_DENY, "permission deny")
 		} else {
 			c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
 		}
@@ -135,6 +135,7 @@ func (c *baseController) setupUserMenu(roles []string) {
 	for i := range roles {
 		if strings.EqualFold(roles[i], adminRoleName) {
 			permissionMenu := models.MenuItem{
+				ID: 1,
 				Name: "权限管理",
 				Icon: "fa-id-card",
 			}
@@ -190,13 +191,24 @@ func (c *baseController) renderNestedTemplate(tpl string) {
 	c.TplName = tplname
 }
 
+func (c *baseController) renderAjaxTemplate(tpl string) {
+	var tplname string
+	if tpl != "" {
+		tplname = strings.Join([]string{tpl, "html"}, ".")
+	} else {
+		controllerName, actionName := c.GetControllerAndAction()
+		tplname = fmt.Sprintf("%s/%s.html", controllerName, actionName)
+	}	
+	c.TplName = tplname
+}
+
 func (c *baseController) ajaxSuccess(data interface{}) {
-	c.Data["json"] = responseData{status: STATUS_OK, data: data}
+	c.Data["json"] = responseData{Status: STATUS_OK, Data: data}
 	c.ServeJSON()
 }
 
 func (c *baseController) ajaxFailure(errno int, errmsg string) {
-	c.Data["json"] = responseData{status: errno, message: errmsg}
+	c.Data["json"] = responseData{Status: errno, Message: errmsg}
 	c.ServeJSON()
 }
 
