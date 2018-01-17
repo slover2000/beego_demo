@@ -5,7 +5,7 @@ layui.define(['layer', 'element', 'form', 'table', 'layedit', 'laydate'], functi
     ,form = layui.form
     ,table = layui.table
     ,layedit = layui.layedit
-    ,laydate = layui.laydate    
-
+    ,laydate = layui.laydate
+    
     exports('index', {})
 });

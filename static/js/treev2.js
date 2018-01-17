@@ -6,6 +6,7 @@ layui.define('jquery', function(exports){
   
   var enterSkin = 'layui-tree-enter', Tree = function(options){
     this.options = options;
+    this.options['cache'] = {} //数据缓存
   };
   
   //图标
@@ -47,7 +48,7 @@ layui.define('jquery', function(exports){
         //复选框/单选框
         ,function(){
           return options.check ? (
-            '<i class="layui-icon layui-tree-check">'+ (
+            '<i class="layui-icon layui-tree-check" layui-data-checked>'+ (
               options.check === 'checkbox' ? icon.checkbox[0] : (
                 options.check === 'radio' ? icon.radio[0] : ''
               )
@@ -83,15 +84,56 @@ layui.define('jquery', function(exports){
       
       //伸展节点
       that.spread(li, item);
-      
+
       //拖拽节点
-      options.drag && that.drag(li, item); 
+      options.drag && that.drag(li, item);      
     });
   };
   
   //点击节点回调
   Tree.prototype.click = function(elem, item){
     var that = this, options = that.options;
+    options.cache[item.id] = {}; // init item cache
+    
+    var checkChildren = function(parent, node){
+      //console.log(node.name)
+      var children = node.children      
+      var li = $(parent).children("li")
+      li.children("i[layui-data-checked]").each(function(i, child){        
+        var id = children[i].id;
+        var checkItem = $(child);
+        var checked = options.cache[id]['checked']
+        if (checked) {
+          checkItem.html(options.check === 'checkbox'? icon.checkbox[0] : icon.radio[0]);
+        } else {
+          checkItem.html(options.check === 'checkbox'? icon.checkbox[1] : icon.radio[1]);
+        }
+        options.cache[id]['checked'] = !checked
+      })
+
+      var ul = li.children('ul') 
+      if(!ul[0]) return;
+      ul.each(function(i, child){
+        checkChildren(child, children[i])
+      })
+    }
+
+    if (options.check) {
+      elem.children('i[layui-data-checked]').on('click', function(e){
+        layui.stope(e);
+        var t = $(e.target);
+        var checked = options.cache[item.id]['checked']
+        if (checked) {
+          t.html(options.check === 'checkbox'? icon.checkbox[0] : icon.radio[0])
+        } else {
+          t.html(options.check === 'checkbox'? icon.checkbox[1] : icon.radio[1])
+        }
+        options.cache[item.id]['checked'] = !checked
+        var ul = elem.children('ul')
+        if(!ul[0]) return;
+        checkChildren(ul[0], item)  
+      })
+    }
     elem.children('a').on('click', function(e){
       layui.stope(e);
       options.click(item)
@@ -195,7 +237,7 @@ layui.define('jquery', function(exports){
   };
   
   //暴露接口
-  exports('tree', function(options){
+  exports('treev2', function(options){
     var tree = new Tree(options = options || {});
     var elem = $(options.elem);
     if(!elem[0]){

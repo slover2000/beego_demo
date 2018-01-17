@@ -13,8 +13,10 @@
         <ul id="demo1" style="margin-top: 50px;"></ul>
                 
         <script>
-        layui.use('tree', function(){
-          var tree = layui.tree({
+        layui.config({
+            base: '/static/js/'
+        }).use('treev2', function(){        
+          var tree = layui.treev2({
             elem: '#demo' //指定元素
             ,check: 'checkbox' //勾选风格
             ,skin: 'as' //设定皮肤
@@ -121,7 +123,7 @@
             });
             return node;
           };
-          layui.tree({
+          layui.treev2({
             elem: '#demo1' //指定元素
             ,nodes: createTree()
           });
