@@ -97,9 +97,9 @@ layui.define('jquery', function(exports){
     
     var checkChildren = function(parent, node){
       //console.log(node.name)
-      var children = node.children      
+      var children = node.children
       var li = $(parent).children("li")
-      li.children("i[layui-data-checked]").each(function(i, child){        
+      li.children("i[layui-data-checked]").each(function(i, child){  
         var id = children[i].id;
         var checkItem = $(child);
         var checked = options.cache[id]['checked']
@@ -110,8 +110,8 @@ layui.define('jquery', function(exports){
         }
         options.cache[id]['checked'] = !checked
       })
-
-      var ul = li.children('ul') 
+      //traval loop all the ul element under each li node
+      var ul = li.children('ul')
       if(!ul[0]) return;
       ul.each(function(i, child){
         checkChildren(child, children[i])
@@ -131,7 +131,7 @@ layui.define('jquery', function(exports){
         options.cache[item.id]['checked'] = !checked
         var ul = elem.children('ul')
         if(!ul[0]) return;
-        checkChildren(ul[0], item)  
+        checkChildren(ul[0], item)
       })
     }
     elem.children('a').on('click', function(e){
@@ -139,6 +139,18 @@ layui.define('jquery', function(exports){
       options.click(item)
     });
   };
+
+  // 返回所有选中的节点
+  Tree.prototype.checkedNodes = function() {
+    var that = this, options = that.options;
+    var result = []
+    for (var k in options.cache) {
+      if (options.cache[k]['checked']) {
+        result.push({id: k})
+      }
+    }
+    return result
+  }
   
   //伸展节点
   Tree.prototype.spread = function(elem, item){
@@ -244,5 +256,6 @@ layui.define('jquery', function(exports){
       return hint.error('layui.tree 没有找到'+ options.elem +'元素');
     }
     tree.init(elem);
+    return tree
   });
 });

@@ -5,17 +5,18 @@
     <!-- <div class="tr fr">
         <button class="layui-btn layui-btn-radius layui-btn-primary layui-btn-xs" onclick="javascript:history.go(-1);"><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
         <button class="layui-btn layui-btn-radius layui-btn-primary layui-btn-xs" onclick="javascript:window.location.reload();"><i class="fa fa-refresh" aria-hidden="true"></i></button>
-    </div>                     -->
+    </div> -->
 </div>
 <div class="layui-row ml20">
         <ul id="demo"></ul>
 
         <ul id="demo1" style="margin-top: 50px;"></ul>
-                
+        <button id="query" class="layui-btn layui-btn-primary">获取</button> 
         <script>
         layui.config({
             base: '/static/js/'
-        }).use('treev2', function(){        
+        }).use('treev2', function(){
+          var $ = layui.$;
           var tree = layui.treev2({
             elem: '#demo' //指定元素
             ,check: 'checkbox' //勾选风格
@@ -127,8 +128,12 @@
             elem: '#demo1' //指定元素
             ,nodes: createTree()
           });
-          
+        
+          $('#query').on('click', function(){
+            console.log(tree.checkedNodes())
+          })          
         });
+        
         </script>
         
         <pre class="layui-code">
