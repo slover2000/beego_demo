@@ -42,7 +42,7 @@ func init() {
 	beego.Router("/admin/user", &controllers.AdminController{}, "GET:GetUser;PUT:SaveUser;POST:CreateUser;DELETE:DeleteUser")
 	beego.Router("/admin/roles", &controllers.AdminController{}, "GET:RoleList")
 	beego.Router("/admin/roles/list", &controllers.AdminController{}, "GET:GetRoles")
-	beego.Router("/admin/role", &controllers.AdminController{}, "GET:GetRole;POST:CreateRole;DELETE:DeleteRole")
+	beego.Router("/admin/role", &controllers.AdminController{}, "GET:GetRole;PUT:SaveRole;POST:CreateRole;DELETE:DeleteRole")
 	beego.Router("/admin/permissions", &controllers.AdminController{}, "GET:PermissionList")
 	beego.Router("/admin/permission", &controllers.AdminController{}, "GET:GetPermission;POST:CreatePermission;DELETE:DeletePermission")
 	beego.Router("/admin/group", &controllers.AdminController{}, "GET:GetGroup;POST:CreateGroup;DELETE:DeleteGroup")

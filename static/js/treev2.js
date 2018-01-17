@@ -49,8 +49,8 @@ layui.define('jquery', function(exports){
         ,function(){
           return options.check ? (
             '<i class="layui-icon layui-tree-check" layui-data-checked>'+ (
-              options.check === 'checkbox' ? icon.checkbox[0] : (
-                options.check === 'radio' ? icon.radio[0] : ''
+              options.check === 'checkbox' ? ((options.checked && options.checked.indexOf(item.id) != -1) ? icon.checkbox[1] : icon.checkbox[0]) : (
+                options.check === 'radio' ? ((options.checked && options.checked.indexOf(item.id) != -1) ? icon.radio[1] : icon.radio[0]) : ''
               )
             ) +'</i>'
           ) : '';
@@ -80,7 +80,10 @@ layui.define('jquery', function(exports){
       elem.append(li);
       
       //触发点击节点回调
-      typeof options.click === 'function' && that.click(li, item); 
+      typeof options.click === 'function' && that.click(li, item);
+
+      //标记节点状态
+      that.check(li, item);
       
       //伸展节点
       that.spread(li, item);
@@ -93,8 +96,18 @@ layui.define('jquery', function(exports){
   //点击节点回调
   Tree.prototype.click = function(elem, item){
     var that = this, options = that.options;
-    options.cache[item.id] = {}; // init item cache
-    
+    elem.children('a').on('click', function(e){
+      layui.stope(e);
+      options.click(item)
+    });
+  };
+
+  Tree.prototype.check = function(elem, item){
+    var that = this, options = that.options;
+    var hasChild = item.children && item.children.length > 0;
+    var isChecked = (options.checked && options.checked.indexOf(item.id) != -1)
+    options.cache[item.id] = {checked: isChecked, ischild: !hasChild}; // init item cache
+
     var checkChildren = function(parent, node){
       //console.log(node.name)
       var children = node.children
@@ -133,24 +146,31 @@ layui.define('jquery', function(exports){
         if(!ul[0]) return;
         checkChildren(ul[0], item)
       })
-    }
-    elem.children('a').on('click', function(e){
-      layui.stope(e);
-      options.click(item)
-    });
-  };
+    }    
+  }
 
   // 返回所有选中的节点
-  Tree.prototype.checkedNodes = function() {
+  Tree.prototype.checkedAllNodes = function() {
     var that = this, options = that.options;
     var result = []
     for (var k in options.cache) {
-      if (options.cache[k]['checked']) {
-        result.push({id: k})
+      if (options.cache[k].checked) {
+        result.push({id: k, ischild: options.cache[k].ischild})
       }
     }
     return result
   }
+
+  Tree.prototype.checkedLeafNodes = function() {
+    var that = this, options = that.options;
+    var result = []
+    for (var k in options.cache) {
+      if (options.cache[k].checked && options.cache[k].ischild) {
+        result.push({id: k})
+      }
+    }
+    return result
+  }  
   
   //伸展节点
   Tree.prototype.spread = function(elem, item){

@@ -22,7 +22,7 @@
         ,page: true //开启分页
         ,cols: [[ //表头
             {field: 'id', title: 'ID', width:80, sort: true, fixed: 'left'}
-            ,{field: 'name', title: '角色名', width: 120}
+            ,{field: 'name', title: '名字', width: 120}
             ,{field: 'create_time', title: '创建时间', width: 200, sort: true}
             ,{fixed: 'right', align:'center', title: '操作', toolbar: '#toolBar'}
         ]]
@@ -54,8 +54,26 @@
                         layer.msg('删除角色"' + data.name + '"失败');
                     });
                 });
-            } else if (layer === 'edit'){//编辑权限
-
+            } else if (layEvent === 'edit'){//编辑权限
+                $.ajax({
+                    method: "GET",
+                    url: '/admin/role',
+                    data: { id: data.id }
+                })
+                .done(function(resp) {
+                    layer.open({
+                        title: '配置"'+data.name+'"角色权限',
+                        area: '500px',
+                        type: 1,
+                        content: resp,
+                        end: function(){                                   
+                            return false; 
+                        },
+                    });
+                })
+                .fail(function() {
+                    layer.msg('加载"' + data.name + '"角色失败');
+                });              
             }
         });
 

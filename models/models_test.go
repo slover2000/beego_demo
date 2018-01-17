@@ -85,12 +85,12 @@ func TestAdminPermission(t *testing.T) {
 		Action: "GET",
 	}
 	// AutoMigrate
-	db.DropTable(&CasbinPermission{})
+	//db.DropTable(&CasbinPermission{})
 	if !db.HasTable(&CasbinPermission{}) {
 		db.Debug().AutoMigrate(&CasbinPermission{})	
 	}
 	
-	db.DropTable(&CasbinGroup{})
+	//db.DropTable(&CasbinGroup{})
 	if !db.HasTable(&CasbinGroup{}) {
 		db.Debug().CreateTable(&CasbinGroup{})		
 	}	
@@ -131,5 +131,14 @@ func TestAdminPermission(t *testing.T) {
 	db.Debug().Save(p3)
 	gormDB.Model(&CasbinGroup{Model: gorm.Model{ID: g2.ID}}).Association("Permissions").Replace([]CasbinPermission{CasbinPermission{Model: Model{ID: p3.ID}}})
 
-	db.Debug().Model(&g).Association("Permissions").Delete(&p)
+	//db.Debug().Model(&g).Association("Permissions").Delete(&p)
+	db.DropTable(&CasbinRole{})
+	if !db.HasTable(&CasbinRole{}) {
+		db.CreateTable(&CasbinRole{})	
+	}
+	role := &CasbinRole{
+		Name: "aaa", 
+		Permissions: []CasbinPermission{*p3},
+	}
+	db.Debug().Save(role)
 }

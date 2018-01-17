@@ -23,6 +23,7 @@
             ,skin: 'as' //设定皮肤
             //,target: '_blank' //是否新选项卡打开（比如节点返回href才有效）
             ,drag: false
+            ,checked:[1, 13, 11, 12]
             ,click: function(item){ //点击节点回调
               console.log(item)
             }
@@ -129,9 +130,10 @@
             ,nodes: createTree()
           });
         
-          $('#query').on('click', function(){
-            console.log(tree.checkedNodes())
-          })          
+          $('#query').on('click', function(){                        
+            //console.log(tree.checkedAllNodes())
+            console.log(tree.checkedLeafNodes())
+          })                    
         });
         
         </script>

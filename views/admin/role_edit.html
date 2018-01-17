@@ -1,0 +1,70 @@
+<ul id="permissions"></ul>
+<hr>
+<form class="layui-form" action="" style="margin:10px;">
+  {{ .xsrfdata }}
+  <input type="hidden" name="id" value="{{.id}}"/>
+  <div class="layui-form-item">
+    <div class="layui-input-block">
+      <button class="layui-btn" lay-submit="" lay-filter="save">保存</button>
+      <button id="cancel" class="layui-btn layui-btn-primary">取消</button>
+    </div>
+  </div>
+<form>
+<script>
+  layui.config({
+      base: '/static/js/'
+  }).use('treev2', function(){
+    var form = layui.form
+        ,$ = layui.$;
+    var permissionTree = layui.treev2({
+      elem: '#permissions' //指定元素
+      ,check: 'checkbox' //勾选风格
+      ,skin: 'as' //设定皮肤
+      ,drag: false     
+      ,checked: [
+        {{range $index, $elem := .HadPermissions}}{{$elem}},{{end}}
+      ]
+      ,nodes: [ //节点
+        {{range $index, $elem := .PermissionGroups}}          
+          {id: {{$elem.ID}},name: {{$elem.Name}},          
+          children:[
+            {{range $i, $e := $elem.Permissions}}
+            {id: {{$e.ID}},name: {{$e.Name}}},
+            {{end}}
+          ]},
+        {{end}}
+      ]
+    });
+
+    //监听提交
+    form.on('submit(save)', function(data){  
+      var checkedIDs = permissionTree.checkedLeafNodes();
+      var idArray = checkedIDs.map(function(e){
+        return e.id
+      })
+      $.ajax({
+        method: "PUT",
+        url: '/admin/role',
+        data: _.assignIn(data.field, {checked: _.join(idArray, ",")}),
+        dataType: 'json',
+        success: function(resp) {
+          if (resp.status != 0){
+              layer.msg(resp.msg, {time: 1000});
+          } else {
+              layer.closeAll('page');
+          }
+        },
+      })
+      .fail(function() {
+          layer.msg('保存权限失败', {time: 1000});
+      })
+      return false;
+    });
+    $('#cancel').on('click', function() {
+      layer.closeAll('page');
+      return false
+    })
+    // must invoke render because the form is dynamically built
+    form.render();
+  });
+</script>

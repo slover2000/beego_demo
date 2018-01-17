@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"strconv"
+	"strings"
 	"html/template"
 
 	"github.com/sirupsen/logrus"
@@ -233,15 +235,36 @@ func (c *AdminController) GetRole() {
 	if err != nil {
 		tpl = "admin/role_add"
 	} else {
-		name := c.GetString("name")
-		if name == "" {
+		groups := models.GetCasbinGroupsWithoutEmpty()		
+		role, err := models.GetCasbinRole(uint(id))
+		if err == nil {
+			hadPermissions := make([]uint, 0)
+			for i := range groups {
+				haveAll := true
+				group := groups[i]
+				for j := range group.Permissions {
+					pid := group.Permissions[j].ID
+					if role.HasPermission(pid) {
+						hadPermissions = append(hadPermissions, pid)
+					} else {
+						haveAll = false
+					}
+				}
+				if haveAll {
+					hadPermissions = append(hadPermissions, group.ID * 10000)
+				}
+				groups[i].ID = group.ID * 10000
+			}
+			c.Data["HadPermissions"] = hadPermissions
+		} else {
 			logrus.WithFields(logrus.Fields{
+				"role": id,
 				"path": c.Ctx.Request.URL.Path,
-			}).Errorf("can't get role name")
+			}).Errorf("load role data failed:%v", err)
 			c.Abort("400")
 		}
 		c.Data["id"] = id
-		c.Data["name"] = name
+		c.Data["PermissionGroups"] = groups
 		tpl = "admin/role_edit"
 	}
 	c.Data["xsrfdata"] = template.HTML(c.XSRFFormHTML())
@@ -283,6 +306,40 @@ func (c *AdminController) GetRoles() {
 		Total: total,
 		Rows: roleResp,
 	}	
+	c.Data["json"] = resp
+	c.ServeJSON()	
+}
+
+func (c *AdminController) SaveRole() {
+	roleid, err := c.GetUint32("id")
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"path": c.Ctx.Request.URL.Path,
+		}).Errorf("role id must be provided '%s'", c.GetString("id"))
+		c.Abort("400")
+	}
+
+	checkedArray := c.GetString("checked")
+	idArray := strings.Split(checkedArray, ",")
+	ids := make([]uint, len(idArray))
+	for i := range idArray {
+		if id, err := strconv.Atoi(idArray[i]); err == nil {
+			ids[i] = uint(id)
+		}
+	}
+
+	resp := &responseData{
+		Status: 0,
+		Message: "ok",
+	}		
+	err = models.SaveCasbinRole(uint(roleid), ids)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"path": c.Ctx.Request.URL.Path,
+		}).Errorf("save role's permissions failed:%v", err)
+		resp.Status = 100
+		resp.Message = "保存角色权限失败"
+	}
 	c.Data["json"] = resp
 	c.ServeJSON()	
 }

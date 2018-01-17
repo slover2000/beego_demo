@@ -18,7 +18,7 @@ type Model struct {
 type CasbinRole struct {
 	Model
 	Name string `json:"name" gorm:"not null"`
-	Permissions []CasbinPermission `json:"permissions" gorm:"-"`
+	Permissions []CasbinPermission `json:"permissions" gorm:"many2many:casbin_role_permission"`
 }
 
 type CasbinGroup struct {
@@ -40,6 +40,16 @@ type CasbinRoleResp struct {
 	CreateTime JSONTime `json:"create_time"`
 }
 
+// HasPermission check whether role having permission
+func (r *CasbinRole) HasPermission(id uint) bool {
+	for i := range r.Permissions {
+		if r.Permissions[i].ID == id {
+			return true
+		}
+	}
+	return false
+}
+
 // GetCasbinRoles list roles in database
 func GetCasbinRoles(offset, limit int) ([]CasbinRole, int) {
 	var count int	
@@ -50,14 +60,23 @@ func GetCasbinRoles(offset, limit int) ([]CasbinRole, int) {
 
 // GetCasbinRole get role by id
 func GetCasbinRole(id uint) (*CasbinRole, error) {
-	var role CasbinRole
-	err := gormDB.Where("id = ?", id).First(&role).Error
-	return &role, err
+	role := &CasbinRole{}
+	err := gormDB.Preload("Permissions").Order("id asc").First(role).Error
+	return role, err
 }
 
 // CreateCasbinRole create new role
 func CreateCasbinRole(role *CasbinRole) error {
 	return gormDB.Create(role).Error
+}
+
+// SaveCasbinRole save role
+func SaveCasbinRole(id uint, permissionIDs []uint) error {
+	permissions := make([]CasbinPermission, len(permissionIDs))
+	for i := range permissionIDs {
+		permissions[i] = CasbinPermission{Model: Model{ID: permissionIDs[i]}}
+	}
+	return gormDB.Model(&CasbinRole{Model: Model{ID: id}}).Association("Permissions").Replace(permissions).Error
 }
 
 // DeleteCasbinRole delete a role from database
@@ -69,6 +88,22 @@ func DeleteCasbinRole(id uint) error {
 func GetCasbinGroups() []CasbinGroup {
 	var groups []CasbinGroup
 	gormDB.Preload("Permissions").Order("id asc").Find(&groups)
+	return groups
+}
+
+// GetCasbinGroupsWithoutEmpty load all permission groups withoud empty group
+func GetCasbinGroupsWithoutEmpty() []CasbinGroup {
+	var groups []CasbinGroup
+	gormDB.Preload("Permissions").Order("id asc").Find(&groups)
+	if len(groups) > 0 {
+		filtered := make([]CasbinGroup, 0)
+		for i := range groups {
+			if len(groups[i].Permissions) > 0 {
+				filtered = append(filtered, groups[i])
+			}
+		}
+		return filtered
+	}
 	return groups
 }
 
