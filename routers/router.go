@@ -39,7 +39,7 @@ func init() {
 	beego.Router("/logout", &controllers.LoginController{}, "*:Logout")	
 	beego.Router("/admin/users", &controllers.AdminController{}, "GET:UserList")
 	beego.Router("/admin/users/list", &controllers.AdminController{}, "GET:GetUsers")
-	beego.Router("/admin/user", &controllers.AdminController{}, "GET:GetUser;PUT:SaveUser;POST:CreateUser;DELETE:DeleteUser")
+	beego.Router("/admin/user", &controllers.AdminController{}, "GET:GetUser;PUT:SaveUser;POST:CreateUser;DELETE:DeleteUser")	
 	beego.Router("/admin/roles", &controllers.AdminController{}, "GET:RoleList")
 	beego.Router("/admin/roles/list", &controllers.AdminController{}, "GET:GetRoles")
 	beego.Router("/admin/role", &controllers.AdminController{}, "GET:GetRole;PUT:SaveRole;POST:CreateRole;DELETE:DeleteRole")

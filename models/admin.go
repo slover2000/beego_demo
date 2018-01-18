@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 	"github.com/jinzhu/gorm"
 )
 
@@ -12,6 +12,14 @@ type Model struct {
 	CreatedAt time.Time  `json:"create_at"`
 	UpdatedAt time.Time  `json:"update_at"`
 	DeletedAt *time.Time `json:"-" sql:"index"`	
+}
+
+type CasbinUser struct {
+	ID    int64   			`gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name  string 				`gorm:"not null;unique"`
+	Roles pq.Int64Array `gorm:"type:integer[]"`
 }
 
 // CasbinRole represents casbin role 
@@ -50,6 +58,13 @@ func (r *CasbinRole) HasPermission(id uint) bool {
 	return false
 }
 
+// GetCasbinAllRoles get all roles in database
+func GetCasbinAllRoles() ([]CasbinRole, error) {
+	var roles []CasbinRole
+	err := gormDB.Find(&roles).Error
+	return roles, err
+}
+
 // GetCasbinRoles list roles in database
 func GetCasbinRoles(offset, limit int) ([]CasbinRole, int) {
 	var count int	
@@ -61,8 +76,24 @@ func GetCasbinRoles(offset, limit int) ([]CasbinRole, int) {
 // GetCasbinRole get role by id
 func GetCasbinRole(id uint) (*CasbinRole, error) {
 	role := &CasbinRole{}
-	err := gormDB.Preload("Permissions").Order("id asc").First(role).Error
+	err := gormDB.Preload("Permissions").Order("id asc").First(role, id).Error
 	return role, err
+}
+
+// GetCasbinUser get user data 
+func GetCasbinUser(id int64) (*CasbinUser, error) {
+	user := &CasbinUser{}
+	err := gormDB.First(user, id).Error
+	return user, err
+}
+
+// SaveCasbinUser get user data 
+func SaveCasbinUser(u *CasbinUser, roles []uint) error {
+	u.Roles = make(pq.Int64Array, len(roles))
+	for i := range roles {
+		u.Roles[i] = int64(roles[i])
+	}
+	return gormDB.Save(u).Error
 }
 
 // CreateCasbinRole create new role

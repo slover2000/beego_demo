@@ -4,11 +4,46 @@ import (
 	"time"
 	"fmt"
 	"log"
+	"reflect"
 	"testing"
+	//"encoding/json"
 
+	"github.com/lib/pq"
 	"github.com/jinzhu/gorm"
-	_ "github.com/lib/pq"
 )
+
+type Example struct {
+	Test pq.Int64Array `gorm:"type:bigint[]"`
+}
+
+type JsonbExample struct {
+	ID    int64   `gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name  string `gorm:"not null;unique"`
+	Roles string `gorm:"type:jsonb not null default '{}'::jsonb"`
+}
+
+func TestArrayExample(t *testing.T) {
+	db, err := gorm.Open("postgres", "dbname=beego user=beego_group password=123456 host=127.0.0.1 port=5432 sslmode=disable")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	
+	db.DropTableIfExists(&Example{})
+	db.CreateTable(&Example{})
+
+	TestExample := Example{[]int64{1, 2, 3, 4}}
+	db.Debug().Create(&TestExample)
+
+	var Result Example
+
+	db.Debug().First(&Result)
+	if !reflect.DeepEqual(TestExample, Result) {
+		fmt.Printf("Failure!")
+	}	
+}
 
 func TestPostgresJsonbORM(t *testing.T) {
 	// Setup Postgres - set CONN_STRING to connect to an empty database
@@ -66,6 +101,33 @@ func TestPostgresJsonbORM(t *testing.T) {
 	}	
 	db.Delete(&classRoom)
 	db.Unscoped().Delete(&classRoom)
+}
+
+func TestAdminUser(t *testing.T) {
+	db, err := gorm.Open("postgres", "dbname=beego user=beego_group password=123456 host=127.0.0.1 port=5432 sslmode=disable")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	db.SingularTable(true)
+
+	db.DropTableIfExists(&JsonbExample{})
+	db.CreateTable(&JsonbExample{})
+
+	// roles := make(CasbinUserRoleList, 0)
+	// roles = append(roles, CasbinUserRole{ID: 1, Name: "test"})
+	// roles = append(roles, CasbinUserRole{ID: 2, Name: "test2"})
+	// data, _ := json.Marshal(roles)
+	// db.Debug().Save(&JsonbExample{Name: "userA", Roles: string(data)})
+
+	// user := &JsonbExample{}
+	// err = db.First(user, 1).Error
+	// if err == nil {
+	// 	var roles CasbinUserRoleList
+	// 	json.Unmarshal([]byte(user.Roles), &roles)
+	// 	data := &CasbinUserData{ID: user.ID, Name: user.Name, Roles: roles}
+	// 	log.Printf("%d", data)
+	// }
 }
 
 func TestAdminPermission(t *testing.T) {

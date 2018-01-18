@@ -40,6 +40,14 @@
         </div>
     </div>
     <div class="layui-form-item">
+        <label class="layui-form-label">角色</label>
+        <div class="layui-input-block">
+          {{range $index, $elem := .roles}}
+            <input type="checkbox" name="role[]" value="{{$elem.ID}}" title="{{$elem.Name}}"> 
+          {{end}}
+        </div>
+    </div>    
+    <div class="layui-form-item">
         <div class="layui-input-block">
             <button class="layui-btn" lay-submit="" lay-filter="create">保存</button>
             <button type="reset" class="layui-btn layui-btn-primary">重置</button>

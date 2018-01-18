@@ -48,26 +48,33 @@
           url: '/admin/permission?group='+'{{$elem.ID}}',
         })
         .done(function(data) {
-            layer.open({
-                title: "创建权限",
-                area: '500px',
-                type: 1,
-                content: data, //注意，如果str是object，那么需要字符拼接。
-                end: function(){
-                    table.reload('{{printf "tab_%d" $elem.ID}}', {
-                      url: "/admin/group",
-                      where: {group: '{{$elem.ID}}'},
-                      page: false,
-                      response: {
-                        statusName: 'status'
-                        ,msgName: 'msg'
-                        ,countName: 'total'
-                        ,dataName: 'rows'
-                      }
-                    });
-                    return false; 
-                },
-            });
+          var canceled = false;
+          layer.open({
+              title: "创建权限",
+              area: '500px',
+              type: 1,
+              content: data, //注意，如果str是object，那么需要字符拼接。
+              cancel: function(index, layero){
+                canceled = true
+                return true; 
+              },                
+              end: function(){
+                if (!canceled) {
+                  table.reload('{{printf "tab_%d" $elem.ID}}', {
+                    url: "/admin/group",
+                    where: {group: '{{$elem.ID}}'},
+                    page: false,
+                    response: {
+                      statusName: 'status'
+                      ,msgName: 'msg'
+                      ,countName: 'total'
+                      ,dataName: 'rows'
+                    }
+                  });
+                }
+                return false; 
+              },
+          });
         })
         .fail(function() {
           layer.msg('加载失败');
@@ -129,9 +136,9 @@
   </div>
 </div>
 <div class="layui-row">
-    <div class="kit-right-align-sm" style="margin-top:10px;">        
-        <button id='new_group' class="layui-btn layui-btn-sm">增加权限组</button>
-    </div>
+  <div class="kit-right-align-sm" style="margin-top:10px;">        
+      <button id='new_group' class="layui-btn layui-btn-sm">增加权限组</button>
+  </div>
 </div>
 <script>
 layui.use(['element', 'layer', 'tablev2'], function(){
@@ -140,25 +147,36 @@ layui.use(['element', 'layer', 'tablev2'], function(){
   element.init();// 动态渲染collapse
   // add new group
   $('#new_group').on('click', function(){
-      $.ajax({
-        method: "GET",
-        url: '/admin/group',
-      })
-      .done(function(data) {
-          layer.open({
-              title: "创建权限组",
-              area: '500px',
-              type: 1,
-              content: data,
-              end: function(){
-                window.location.replace('/home?menu=1');
-              },
-          });
-      })
-      .fail(function() {
-        layer.msg('加载失败');
+    $.ajax({
+      method: "GET",
+      url: '/admin/group',
+    })
+    .done(function(data) {
+      var canceled = false;
+      layer.open({
+        title: "创建权限组",
+        area: '500px',
+        type: 1,
+        content: data,
+        cancel: function(index, layero){
+          canceld = true
+          return true
+        },
+        end: function(){
+          if (!canceled) {
+            window.location.replace('/home?menu=1')
+          }              
+        },
       });
+    })
+    .fail(function() {
+      layer.msg('加载失败');
     });
+  });
+  //监听折叠
+  // element.on('collapse(group)', function(data){
+  //   layer.msg('展开状态：'+ data.show);
+  // })
 });
 </script>
 <script type="text/html" id="toolBar">  

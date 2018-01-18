@@ -15,6 +15,12 @@ type AdminController struct {
 	baseController
 }
 
+type RoleData struct {
+	ID 	  uint
+	Name  string
+	Have  bool
+}
+
 func (c *AdminController) UserList() {
 	c.Data["pageTitle"] = "用户列表"
 	c.Data["xsrf_token"] = c.XSRFToken()
@@ -69,9 +75,14 @@ func (c *AdminController) GetUsers() {
 
 func (c *AdminController) GetUser() {
 	tpl := ""
+	roles, err := models.GetCasbinAllRoles()
+	if err != nil {
+		roles = make([]models.CasbinRole, 0)
+	}
 	id, err := c.GetInt64("id")
 	if err != nil {
-		tpl = "admin/user_add"		
+		c.Data["roles"] = roles
+		tpl = "admin/user_add"
 	} else {
 		user, err := models.GetUser2(id)
 		if err != nil {
@@ -80,7 +91,21 @@ func (c *AdminController) GetUser() {
 				"path": c.Ctx.Request.URL.Path,
 			}).Errorf("user id doesn't exist")
 			c.Abort("400")
-		}		
+		}
+		
+		casbinUser, err := models.GetCasbinUser(id)
+		roleData := make([]RoleData, len(roles))
+		for i := range roles {
+			roleData[i].ID = roles[i].ID
+			roleData[i].Name = roles[i].Name
+			for j := range casbinUser.Roles {
+				hadRoleID := casbinUser.Roles[j]
+				if uint(hadRoleID) == roles[i].ID {
+					roleData[i].Have = true
+				}
+			}
+		}
+		c.Data["roles"] = roleData
 		c.Data["uid"] = user.Id
 		c.Data["username"] = user.Name
 		c.Data["age"] = user.Profile2.Age
@@ -89,6 +114,7 @@ func (c *AdminController) GetUser() {
 		c.Data["addr"] = user.Profile2.Address
 		tpl = "admin/user_edit"
 	}
+	
 	c.Data["xsrfdata"] = template.HTML(c.XSRFFormHTML())
 	c.renderAjaxTemplate(tpl)
 }
@@ -115,6 +141,7 @@ func (c *AdminController) SaveUser() {
 	if genderType == 1 {
 		gender = "female"
 	}
+
 	user := &models.User2{
 		Id: id,
 		Name: c.GetString("name"),
@@ -134,6 +161,10 @@ func (c *AdminController) SaveUser() {
 		resp.Status = 100
 		resp.Message = "failed"
 	}
+
+	roles := make([]uint, 0)
+	c.Ctx.Input.Bind(&roles, "role")	
+	models.SaveCasbinUser(&models.CasbinUser{ID: user.Id, Name: user.Name}, roles)
 	c.Data["json"] = resp
 	c.ServeJSON()
 }
@@ -192,6 +223,10 @@ func (c *AdminController) CreateUser() {
 		resp.Status = 100
 		resp.Message = "用户名重复"
 	}
+
+	roles := make([]uint, 0)
+	c.Ctx.Input.Bind(&roles, "role")
+	models.SaveCasbinUser(&models.CasbinUser{ID: user.Id, Name: user.Name}, roles)
 
 	c.Data["json"] = resp
 	c.ServeJSON()

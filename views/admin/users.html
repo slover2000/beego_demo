@@ -65,13 +65,20 @@
                 data: { id: data.id }
             })
             .done(function(data) {
+                var canceled = false;
                 layer.open({
                     title: "修改用户信息",
                     area: '500px',
                     type: 1,
                     content: data, //注意，如果str是object，那么需要字符拼接。
+                    cancel: function(index, layero){
+                        canceled = true
+                        return true; 
+                    },                    
                     end: function(){
-                        table.reload('usertab', {});                           
+                        if (!canceled) {
+                            table.reload('usertab', {});
+                        }
                         return false; 
                     },
                 });
@@ -88,13 +95,20 @@
             url: '/admin/user',
         })
         .done(function(data) {
+            var canceled = false;
             layer.open({
                 title: "注册新用户",
                 area: '500px',
                 type: 1,
                 content: data, //注意，如果str是object，那么需要字符拼接。
+                cancel: function(index, layero){
+                    canceled = true
+                    return true; 
+                },                
                 end: function(){
-                    table.reload('usertab', {});                           
+                    if (!canceled) {
+                        table.reload('usertab', {});
+                    }                    
                     return false; 
                 },
             });

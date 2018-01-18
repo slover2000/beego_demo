@@ -21,7 +21,7 @@
                 <option value="1" {{if ne .gender "male"}}selected="selected"{{end}}>女</option>
             </select>
         </div>
-    </div>        
+    </div>
     <div class="layui-form-item">
         <label class="layui-form-label">Email</label>
         <div class="layui-input-block">
@@ -34,6 +34,14 @@
             <input type="text" name="addr" autocomplete="off" placeholder="请输入住址" class="layui-input" value="{{.addr}}">
         </div>
     </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">角色列表</label>
+        <div class="layui-input-block">
+          {{range $index, $elem := .roles}}
+            <input type="checkbox" name="role[]" title="{{$elem.Name}}" value="{{$elem.ID}}" {{if $elem.Have}}checked{{end}}>
+          {{end}}
+        </div>
+    </div>    
     <div class="layui-form-item">
         <div class="layui-input-block">
             <button class="layui-btn" lay-submit="" lay-filter="edit">保存</button>

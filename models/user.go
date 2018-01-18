@@ -43,6 +43,9 @@ func init() {
 	if !gormDB.HasTable(&CasbinRole{}) {
 		gormDB.CreateTable(&CasbinRole{})	
 	}
+	if !gormDB.HasTable(&CasbinUser{}) {
+		gormDB.CreateTable(&CasbinUser{})
+	}
 }
 
 type User struct {

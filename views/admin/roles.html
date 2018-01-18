@@ -61,11 +61,16 @@
                     data: { id: data.id }
                 })
                 .done(function(resp) {
+                    var canceled = false
                     layer.open({
                         title: '配置"'+data.name+'"角色权限',
                         area: '500px',
                         type: 1,
                         content: resp,
+                        cancel: function(index, layero){
+                            canceled = true
+                            return true;
+                        },                        
                         end: function(){                                   
                             return false; 
                         },
@@ -83,13 +88,20 @@
                 url: '/admin/role',
             })
             .done(function(data) {
+                var canceled = false
                 layer.open({
                     title: "创建新角色",
                     area: '500px',
                     type: 1,
                     content: data, //注意，如果str是object，那么需要字符拼接。
+                    cancel: function(index, layero){
+                        canceled = true
+                        return true;
+                    },
                     end: function(){
-                        table.reload('roletab', {});                           
+                        if (!canceled) {
+                            table.reload('roletab', {});
+                        }                                               
                         return false; 
                     },
                 });
