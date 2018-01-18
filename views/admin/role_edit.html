@@ -28,7 +28,7 @@
         {{range $index, $elem := .PermissionGroups}}          
           {id: {{$elem.ID}},name: {{$elem.Name}},          
           children:[
-            {{range $i, $e := $elem.Permissions}}
+            {{range $i, $e := $elem.Children}}
             {id: {{$e.ID}},name: {{$e.Name}}},
             {{end}}
           ]},

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/jinzhu/gorm"
 )
 
 type Model struct {
@@ -29,17 +28,26 @@ type CasbinRole struct {
 	Permissions []CasbinPermission `json:"permissions" gorm:"many2many:casbin_role_permission"`
 }
 
-type CasbinGroup struct {
-	gorm.Model
-	Name     string `json:"name" gorm:"not null"`
-	Permissions []CasbinPermission `json:"permissions" gorm:"many2many:casbin_group_permission"`
-}
+// type CasbinGroup struct {
+// 	gorm.Model
+// 	Name     string `json:"name" gorm:"not null"`
+// 	Permissions []CasbinPermission `json:"permissions" gorm:"many2many:casbin_group_permission"`
+// }
+
+// type CasbinPermission struct {
+// 	Model
+// 	Name     string `json:"name" gorm:"not null"`
+// 	Resource string `json:"resource"`
+// 	Action   string `json:"action"`
+// }
 
 type CasbinPermission struct {
 	Model
 	Name     string `json:"name" gorm:"not null"`
+	Parent   uint   `json:"parent" gorm:"index"`
 	Resource string `json:"resource"`
 	Action   string `json:"action"`
+	Children []CasbinPermission `json:"children" gorm:"-"`
 }
 
 type CasbinRoleResp struct {
@@ -115,99 +123,91 @@ func DeleteCasbinRole(id uint) error {
 	return gormDB.Delete(&CasbinRole{Model: Model{ID: id}}).Error
 }
 
-// GetCasbinGroups load all permission groups
-func GetCasbinGroups() []CasbinGroup {
-	var groups []CasbinGroup
-	gormDB.Preload("Permissions").Order("id asc").Find(&groups)
-	return groups
+// GetCasbinRootPermissions load all root permissions
+func GetCasbinRootPermissions() []CasbinPermission {
+	var roots []CasbinPermission	
+	gormDB.Where("parent = ?", 0).Find(&roots)
+	return roots
 }
 
-// GetCasbinGroupsWithoutEmpty load all permission groups withoud empty group
-func GetCasbinGroupsWithoutEmpty() []CasbinGroup {
-	var groups []CasbinGroup
-	gormDB.Preload("Permissions").Order("id asc").Find(&groups)
-	if len(groups) > 0 {
-		filtered := make([]CasbinGroup, 0)
-		for i := range groups {
-			if len(groups[i].Permissions) > 0 {
-				filtered = append(filtered, groups[i])
+// GetCasbinPermissionsWithoutEmpty load all permission groups withoud empty group
+func GetCasbinPermissionsWithoutEmpty() []CasbinPermission {
+	roots, err := GetCasbinPermissions()
+	if err == nil {
+		nonEmptyRoots := make([]CasbinPermission, 0)
+		for i := range roots {
+			if len(roots[i].Children) > 0 {
+				nonEmptyRoots = append(nonEmptyRoots, roots[i])
 			}
 		}
-		return filtered
+		return nonEmptyRoots
 	}
-	return groups
+	return []CasbinPermission{}
 }
 
-// CreateCasbinGroup create new group
-func CreateCasbinGroup(group *CasbinGroup) error {
-	return gormDB.Create(group).Error
+// CreateCasbinRootPermission create new group
+func CreateCasbinRootPermission(p *CasbinPermission) error {
+	return gormDB.Create(p).Error
 }
 
-// DeleteCasbinGroup delete group from database
-func DeleteCasbinGroup(group uint) error {
-	g := &CasbinGroup{Model: gorm.Model{ID: group}}
-	var permissions []CasbinPermission
-	gormDB.Model(g).Association("Permissions").Find(&permissions)
+// DeleteCasbinRootPermission delete group from database
+func DeleteCasbinRootPermission(root uint) error {	
 	tx := gormDB.Begin()
-	err := tx.Model(g).Association("Permissions").Clear().Error
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Delete(g).Error
+	err := tx.Where("parent = ?", root).Delete(&CasbinPermission{}).Error
 	if err != nil {
 		tx.Rollback()
 		return err
 	}	
 
-	if len(permissions) > 0 {
-		pids := make([]uint, len(permissions))
-		for i := range permissions {
-			pids[i] = permissions[i].ID
-		}
-		tx.Where("id IN (?)", pids).Delete(CasbinPermission{})
+	err = tx.Where("id = ?", root).Delete(&CasbinPermission{}).Error
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
 	tx.Commit()
 	return tx.Error
 }
 
-// AppendCasbinPermissionToGroup add a new permission to group
-func AppendCasbinPermissionToGroup(group uint, p *CasbinPermission) error {
-	return gormDB.Model(&CasbinGroup{Model: gorm.Model{ID: group}}).Association("Permissions").Append(*p).Error
+// AppendCasbinPermissionToRoot add a new permission to group
+func AppendCasbinPermissionToRoot(root uint, p *CasbinPermission) error {
+	p.Parent = root
+	return gormDB.Save(p).Error	
 }
 
-// DeleteCasbinPermissionFromGroup delete a permission from group
-func DeleteCasbinPermissionFromGroup(group uint, permission uint) error {
-	err := gormDB.Model(&CasbinGroup{Model: gorm.Model{ID: group}}).Association("Permissions").Delete(CasbinPermission{Model: Model{ID: permission}}).Error
-	if err != nil {
-		return err
-	}
-	return gormDB.Delete(&CasbinPermission{Model: Model{ID: permission}}).Error
+// DeleteCasbinPermissionFromRoot delete a permission from group
+func DeleteCasbinPermissionFromRoot(root uint, permission uint) error {
+	return gormDB.Where("id = ?", permission).Delete(&CasbinPermission{}).Error
 }
 
-// SaveCasbinGroup save group with permission associations
-func SaveCasbinGroup(group uint, permissionIDs []uint) error {
-	permissions := make([]CasbinPermission, len(permissionIDs))
-	for i := range permissionIDs {
-		permissions[i] = CasbinPermission{Model: Model{ID: permissionIDs[i]}}
-	}
-	return gormDB.Model(&CasbinGroup{Model: gorm.Model{ID: group}}).Association("Permissions").Replace(permissions).Error
-}
-
-// GetCasbinPermissionsByGroup get permissions by group id
-func GetCasbinPermissionsByGroup(group uint) []CasbinPermission {
+// GetCasbinPermissionsByRoot get permissions by root id
+func GetCasbinPermissionsByRoot(root uint) []CasbinPermission {
 	var permissons []CasbinPermission
-	gormDB.First(&CasbinGroup{Model: gorm.Model{ID: group}}).Association("Permissions").Find(&permissons)
+	gormDB.Where("parent = ?", root).Find(&permissons)
 	return permissons
 }
 
-// CreateCasbinPermission create a new permission
-func CreateCasbinPermission(p *CasbinPermission) error {
-	return gormDB.Create(p).Error
-}
-
-// DeleteCasbinPermission delete a permission from database
-func DeleteCasbinPermission(id uint) error {
-	return gormDB.Delete(&CasbinPermission{Model: Model{ID: id}}).Error
+// GetCasbinPermissions get all permissions by hierarchy mode
+func GetCasbinPermissions() ([]CasbinPermission, error) {
+	var permissions []CasbinPermission
+	err := gormDB.Find(&permissions).Error
+	if err != nil {
+		return nil, err
+	}
+	// find root permissions
+	roots := make([]CasbinPermission, 0)
+	for i := range permissions {
+		if permissions[i].Parent == 0 {
+			roots = append(roots, permissions[i])
+		}
+	}
+	// build children permission of root
+	for i := range roots {
+		roots[i].Children = make([]CasbinPermission, 0)
+		for j := range permissions {
+			if permissions[j].Parent == roots[i].ID {
+				roots[i].Children = append(roots[i].Children, permissions[j])
+			}
+		}
+	}
+	return roots, nil
 }

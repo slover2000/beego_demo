@@ -204,3 +204,36 @@ func TestAdminPermission(t *testing.T) {
 	}
 	db.Debug().Save(role)
 }
+
+func TestPermissionV2(t *testing.T) {
+	db, err := gorm.Open("postgres", "dbname=beego user=beego_group password=123456 host=127.0.0.1 port=5432 sslmode=disable")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	db.SingularTable(true)
+	
+	db.DropTableIfExists(&CasbinPermissionV2{})
+	db.CreateTable(&CasbinPermissionV2{})
+
+	p1 := &CasbinPermissionV2{Name:"folder1", Parent: 0}
+	db.Save(p1)
+
+	c1 := &CasbinPermissionV2{Name:"folder1", Parent: p1.ID, Resource: "/url/c1", Action:"GET"}
+	db.Save(c1)
+	c2 := &CasbinPermissionV2{Name:"folder1", Parent: p1.ID, Resource: "/url/c2", Action:"GET"}
+	db.Save(c2)
+
+	var roots []CasbinPermissionV2
+	err = db.Where("parent = ?", 0).Find(&roots).Error
+	for i := range roots {
+		var children []CasbinPermissionV2
+		db.Where("parent = ?", roots[i].ID).Find(&children)
+		roots[i].Children = children
+	}
+
+	if err != nil {
+		t.Errorf("save permission group failed:%v", err)
+		return
+	}	
+}

@@ -270,15 +270,15 @@ func (c *AdminController) GetRole() {
 	if err != nil {
 		tpl = "admin/role_add"
 	} else {
-		groups := models.GetCasbinGroupsWithoutEmpty()		
+		groups := models.GetCasbinPermissionsWithoutEmpty()
 		role, err := models.GetCasbinRole(uint(id))
 		if err == nil {
 			hadPermissions := make([]uint, 0)
 			for i := range groups {
 				haveAll := true
 				group := groups[i]
-				for j := range group.Permissions {
-					pid := group.Permissions[j].ID
+				for j := range group.Children {
+					pid := group.Children[j].ID
 					if role.HasPermission(pid) {
 						hadPermissions = append(hadPermissions, pid)
 					} else {
@@ -286,9 +286,9 @@ func (c *AdminController) GetRole() {
 					}
 				}
 				if haveAll {
-					hadPermissions = append(hadPermissions, group.ID * 10000)
+					hadPermissions = append(hadPermissions, group.ID)
 				}
-				groups[i].ID = group.ID * 10000
+				groups[i].ID = group.ID
 			}
 			c.Data["HadPermissions"] = hadPermissions
 		} else {
@@ -435,7 +435,7 @@ func (c *AdminController) DeleteRole() {
 }
 
 func (c *AdminController) PermissionList() {
-	groups := models.GetCasbinGroups()
+	groups, _ := models.GetCasbinPermissions()
 	c.Data["permissGroup"] = groups
 	c.Data["pageTitle"] = "权限列表"
 	c.Data["xsrf_token"] = c.XSRFToken()
@@ -510,7 +510,7 @@ func (c *AdminController) CreatePermission() {
 		Status: 0,
 		Message: "ok",
 	}	
-	err = models.AppendCasbinPermissionToGroup(uint(gid), &permission)
+	err = models.AppendCasbinPermissionToRoot(uint(gid), &permission)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -544,7 +544,7 @@ func (c *AdminController) DeletePermission() {
 		Status: 0,
 		Message: "ok",
 	}	
-	err = models.DeleteCasbinPermissionFromGroup(uint(gid), uint(id))
+	err = models.DeleteCasbinPermissionFromRoot(uint(gid), uint(id))
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -564,7 +564,7 @@ func (c *AdminController) GetGroup() {
 		c.Data["xsrfdata"] = template.HTML(c.XSRFFormHTML())
 		c.renderAjaxTemplate(tpl)
 	} else {
-		permissions := models.GetCasbinPermissionsByGroup(uint(gid))
+		permissions := models.GetCasbinPermissionsByRoot(uint(gid))
 		resp := &tableData{
 			Status: 0,
 			Message: "ok",
@@ -589,7 +589,7 @@ func (c *AdminController) CreateGroup() {
 		Status: 0,
 		Message: "ok",
 	}	
-	err := models.CreateCasbinGroup(&models.CasbinGroup{Name: name})
+	err := models.CreateCasbinRootPermission(&models.CasbinPermission{Name: name})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -611,7 +611,7 @@ func (c *AdminController) DeleteGroup() {
 		c.Abort("400")
 	}
 
-	err = models.DeleteCasbinGroup(uint(group))
+	err = models.DeleteCasbinRootPermission(uint(group))
 	resp := &responseData{
 		Status: 0,
 		Message: "ok",

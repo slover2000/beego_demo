@@ -8,44 +8,15 @@ import (
 	"time"
 	"encoding/json"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/lib/pq"
-
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/astaxie/beego"
 )
 
-var (
-	UserList map[int64]*User
-	gormDB *gorm.DB
-)
+var UserList map[int64]*User
 
 func init() {
 	UserList = make(map[int64]*User)
 	u := User{1111, "astaxie", "11111", time.Now(), time.Now(), Profile{"male", 20, "Singapore", "astaxie@gmail.com"}}
 	UserList[1111] = &u
-
-	dataSource := fmt.Sprintf(
-		"dbname=%s user=%s password=%s host=%s port=%d sslmode=disable",
-		beego.AppConfig.DefaultString("postgres.database", "beego"),
-		beego.AppConfig.DefaultString("postgres.user", "beego_group"),
-		beego.AppConfig.DefaultString("postgres.password", "123456"),
-		beego.AppConfig.DefaultString("postgres.host", "127.0.0.1"),
-		beego.AppConfig.DefaultInt("postgres.port", 5432))
-
-	db, err := gorm.Open("postgres", dataSource)
-	if err != nil {
-		panic(err)
-	}
-	gormDB = db
-	gormDB.SingularTable(true)
-	if !gormDB.HasTable(&CasbinRole{}) {
-		gormDB.CreateTable(&CasbinRole{})	
-	}
-	if !gormDB.HasTable(&CasbinUser{}) {
-		gormDB.CreateTable(&CasbinUser{})
-	}
 }
 
 type User struct {
