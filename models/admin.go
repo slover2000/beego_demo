@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/lib/pq"
+	"github.com/lib/pq"	
 )
 
 // Enforcer interface

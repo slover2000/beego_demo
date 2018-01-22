@@ -1,21 +1,20 @@
-package internal
+package models
 
 import (
 	"sync"
 	"github.com/lib/pq"
 	"github.com/jinzhu/gorm"
-	"github.com/slover2000/beego_demo/models"
 )
 
 // SyncedEnforcer goroutine safed enforcer
 type SyncedEnforcer struct {
 	db 				*gorm.DB
-	model     *Model
+	model     *EnforcerModel
 	lock 			sync.RWMutex	
 }
 
 // NewSyncedEnforcer create a SyncedEnforcer object 
-func NewSyncedEnforcer(db *gorm.DB, autoLoad bool) models.Enforcer {
+func NewSyncedEnforcer(db *gorm.DB, autoLoad bool) Enforcer {
 	return &SyncedEnforcer{db: db, model:NewModel(autoLoad)}
 }
 
@@ -43,28 +42,28 @@ func (e *SyncedEnforcer) RefreshPolicy() {
 	e.model.Refresh(users, roles, permissions)
 }
 
-func (e *SyncedEnforcer) GetAllRoles() []models.CasbinRole {
-	var roles []models.CasbinRole
+func (e *SyncedEnforcer) GetAllRoles() []CasbinRole {
+	var roles []CasbinRole
 	if err := e.db.Find(&roles).Error; err == nil {
 		return roles
 	}
-	return []models.CasbinRole{}
+	return []CasbinRole{}
 }
 
-func (e *SyncedEnforcer) GetRoles(offset, limit int) ([]models.CasbinRole, int) {
+func (e *SyncedEnforcer) GetRoles(offset, limit int) ([]CasbinRole, int) {
 	var count int	
-	var roles []models.CasbinRole
+	var roles []CasbinRole
 	e.db.Offset(offset).Limit(limit).Order("id asc").Find(&roles).Count(&count)
 	return roles, count
 }
 
-func (e *SyncedEnforcer) GetRole(id uint) (*models.CasbinRole, error) {
-	role := &models.CasbinRole{}
+func (e *SyncedEnforcer) GetRole(id uint) (*CasbinRole, error) {
+	role := &CasbinRole{}
 	err := e.db.Preload("Permissions").Order("id asc").First(role, id).Error
 	return role, err
 }
 
-func (e *SyncedEnforcer) CreateRole(role *models.CasbinRole) error	{
+func (e *SyncedEnforcer) CreateRole(role *CasbinRole) error	{
 	e.lock.Lock()
 	defer e.lock.Unlock()
 			
@@ -85,11 +84,11 @@ func (e *SyncedEnforcer) SaveRole(id uint, permissionIDs []uint) error {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	permissions := make([]models.CasbinPermission, len(permissionIDs))
-	for i := range permissionIDs {
-		permissions[i] = models.CasbinPermission{Model: models.Model{ID: permissionIDs[i]}}
+	permissions := make([]CasbinPermission, len(permissionIDs))
+	for i := range permissionIDs {		
+		permissions[i] = CasbinPermission{Model: Model{ID: permissionIDs[i]}}
 	}
-	err := e.db.Model(&models.CasbinRole{Model: models.Model{ID: id}}).Association("Permissions").Replace(permissions).Error
+	err := e.db.Model(&CasbinRole{Model: Model{ID: id}}).Association("Permissions").Replace(permissions).Error
 	if err == nil {
 		e.model.UpdateRole(id, permissionIDs)
 	}
@@ -100,21 +99,21 @@ func (e *SyncedEnforcer) DeleteRole(id uint) error {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	err := e.db.Delete(&models.CasbinRole{Model: models.Model{ID: id}}).Error
+	err := e.db.Delete(&CasbinRole{Model: Model{ID: id}}).Error
 	if err == nil {
 		e.model.RemoveRole(id)
 	}
 	return err
 }
 
-func (e *SyncedEnforcer) GetPermissions() []models.CasbinPermission {
-	var permissions []models.CasbinPermission
+func (e *SyncedEnforcer) GetPermissions() []CasbinPermission {
+	var permissions []CasbinPermission
 	err := e.db.Find(&permissions).Error
 	if err != nil {
 		return permissions
 	}
 	// find root permissions
-	roots := make([]models.CasbinPermission, 0)
+	roots := make([]CasbinPermission, 0)
 	for i := range permissions {
 		if permissions[i].Parent == 0 {
 			roots = append(roots, permissions[i])
@@ -122,7 +121,7 @@ func (e *SyncedEnforcer) GetPermissions() []models.CasbinPermission {
 	}
 	// build children permission of root
 	for i := range roots {
-		roots[i].Children = make([]models.CasbinPermission, 0)
+		roots[i].Children = make([]CasbinPermission, 0)
 		for j := range permissions {
 			if permissions[j].Parent == roots[i].ID {
 				roots[i].Children = append(roots[i].Children, permissions[j])
@@ -132,9 +131,9 @@ func (e *SyncedEnforcer) GetPermissions() []models.CasbinPermission {
 	return roots
 }
 
-func (e *SyncedEnforcer) GetPermissionsWithoutEmpty() []models.CasbinPermission {
+func (e *SyncedEnforcer) GetPermissionsWithoutEmpty() []CasbinPermission {
 	roots := e.GetPermissions()
-	nonEmptyRoots := make([]models.CasbinPermission, 0)
+	nonEmptyRoots := make([]CasbinPermission, 0)
 	for i := range roots {
 		if len(roots[i].Children) > 0 {
 			nonEmptyRoots = append(nonEmptyRoots, roots[i])
@@ -143,19 +142,19 @@ func (e *SyncedEnforcer) GetPermissionsWithoutEmpty() []models.CasbinPermission 
 	return nonEmptyRoots
 }
 
-func (e *SyncedEnforcer) GetAllChildPermissions() []models.CasbinPermission {
-	var permissons []models.CasbinPermission
+func (e *SyncedEnforcer) GetAllChildPermissions() []CasbinPermission {
+	var permissons []CasbinPermission
 	e.db.Where("parent <> 0").Find(&permissons)
 	return permissons
 }
 
-func (e *SyncedEnforcer) GetChildPermissions(parent uint) []models.CasbinPermission {
-	var permissons []models.CasbinPermission
+func (e *SyncedEnforcer) GetChildPermissions(parent uint) []CasbinPermission {
+	var permissons []CasbinPermission
 	e.db.Where("parent = ?", parent).Find(&permissons)
 	return permissons
 }
 
-func (e *SyncedEnforcer) CreatePermission(p *models.CasbinPermission) error {
+func (e *SyncedEnforcer) CreatePermission(p *CasbinPermission) error {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -171,13 +170,13 @@ func (e *SyncedEnforcer) DeletePermission(pid uint) error	{
 	defer e.lock.Unlock()
 
 	tx := e.db.Begin()
-	err := tx.Where("parent = ?", pid).Delete(&models.CasbinPermission{}).Error
+	err := tx.Where("parent = ?", pid).Delete(&CasbinPermission{}).Error
 	if err != nil {
 		tx.Rollback()
 		return err
 	}	
 
-	err = tx.Where("id = ?", pid).Delete(&models.CasbinPermission{}).Error
+	err = tx.Where("id = ?", pid).Delete(&CasbinPermission{}).Error
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -189,21 +188,21 @@ func (e *SyncedEnforcer) DeletePermission(pid uint) error	{
 	return tx.Error
 }
 
-func (e *SyncedEnforcer) GetAllUsers() []models.CasbinUser {
-	users := make([]models.CasbinUser, 0)
+func (e *SyncedEnforcer) GetAllUsers() []CasbinUser {
+	users := make([]CasbinUser, 0)
 	if err := e.db.Find(&users).Error; err == nil {
 		return users
 	}
-	return []models.CasbinUser{}
+	return []CasbinUser{}
 }
 
-func (e *SyncedEnforcer) GetUser(id int64) (*models.CasbinUser, error) {
-	user := &models.CasbinUser{}
+func (e *SyncedEnforcer) GetUser(id int64) (*CasbinUser, error) {
+	user := &CasbinUser{}
 	err := e.db.First(user, id).Error
 	return user, err
 }
 
-func (e *SyncedEnforcer) SaveUser(u *models.CasbinUser, roles []uint) error {
+func (e *SyncedEnforcer) SaveUser(u *CasbinUser, roles []uint) error {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
