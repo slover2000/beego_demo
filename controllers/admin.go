@@ -326,20 +326,11 @@ func (c *AdminController) GetRoles() {
 
 	offset := (page - 1) * limit
 	roles, total := models.GetCasbinRoles(offset, limit)
-	roleResp := make([]models.CasbinRoleResp, len(roles))
-	for i := range roles {
-		r := roles[i]
-		roleResp[i] = models.CasbinRoleResp{
-			ID: r.ID,
-			Name: r.Name,
-			CreateTime: models.JSONTime(r.CreatedAt),
-		}
-	}
 	resp := &tableData{
 		Status: 0,
 		Message: "ok",
 		Total: total,
-		Rows: roleResp,
+		Rows: roles,
 	}	
 	c.Data["json"] = resp
 	c.ServeJSON()	

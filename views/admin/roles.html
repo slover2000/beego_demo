@@ -21,9 +21,9 @@
         }
         ,page: true //开启分页
         ,cols: [[ //表头
-            {field: 'id', title: 'ID', width:80, sort: true, fixed: 'left'}
+            {field: 'ID', title: 'ID', width:80, sort: true, fixed: 'left'}
             ,{field: 'name', title: '名字', width: 120}
-            ,{field: 'create_time', title: '创建时间', width: 200, sort: true}
+            ,{field: 'create_at', title: '创建时间', width: 200, sort: true}
             ,{fixed: 'right', align:'center', title: '操作', toolbar: '#toolBar'}
         ]]
         });
@@ -39,7 +39,7 @@
                     layer.close(index);              
                     $.ajax({
                         method: "DELETE",
-                        url: '/admin/role?id='+data.id,
+                        url: '/admin/role?id='+data.ID,
                         headers: {'X-Xsrftoken': $('#xsrf_token').val()}, // xsrf token                
                         dataType: 'json',
                         success: function(resp) {
@@ -58,7 +58,7 @@
                 $.ajax({
                     method: "GET",
                     url: '/admin/role',
-                    data: { id: data.id }
+                    data: { id: data.ID }
                 })
                 .done(function(resp) {
                     var canceled = false

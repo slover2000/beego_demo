@@ -6,6 +6,28 @@ import (
 	"github.com/lib/pq"
 )
 
+// Enforcer interface
+type Enforcer interface {
+	LoadPolicy() error
+	SavePolicy() error
+	RefreshPolicy()
+	GetAllRoles() []CasbinRole
+	GetRoles(offset, limit int) ([]CasbinRole, int)
+	GetRole(id uint) (*CasbinRole, error)
+	CreateRole(role *CasbinRole) error	
+	SaveRole(id uint, permissionIDs []uint) error
+	DeleteRole(id uint) error
+	GetPermissions() []CasbinPermission
+	GetPermissionsWithoutEmpty() []CasbinPermission
+	GetChildPermissions(parent uint) []CasbinPermission
+	CreatePermission(p *CasbinPermission) error
+	DeletePermission(pid uint) error	
+	GetUser(id int64) (*CasbinUser, error)
+	SaveUser(u *CasbinUser, roles []uint) error
+	Enforce(user, resource, action string) bool
+}
+
+// Model base structure
 type Model struct {
 	ID        uint       `json:"ID" gorm:"primary_key"`
 	CreatedAt time.Time  `json:"create_at"`
@@ -13,6 +35,7 @@ type Model struct {
 	DeletedAt *time.Time `json:"-" sql:"index"`	
 }
 
+// CasbinUser represents a casbin user
 type CasbinUser struct {
 	ID    int64   			`gorm:"primary_key"`
 	CreatedAt time.Time
@@ -28,19 +51,7 @@ type CasbinRole struct {
 	Permissions []CasbinPermission `json:"permissions" gorm:"many2many:casbin_role_permission"`
 }
 
-// type CasbinGroup struct {
-// 	gorm.Model
-// 	Name     string `json:"name" gorm:"not null"`
-// 	Permissions []CasbinPermission `json:"permissions" gorm:"many2many:casbin_group_permission"`
-// }
-
-// type CasbinPermission struct {
-// 	Model
-// 	Name     string `json:"name" gorm:"not null"`
-// 	Resource string `json:"resource"`
-// 	Action   string `json:"action"`
-// }
-
+// CasbinPermission represents casbin permission
 type CasbinPermission struct {
 	Model
 	Name     string `json:"name" gorm:"not null"`
@@ -48,12 +59,6 @@ type CasbinPermission struct {
 	Resource string `json:"resource"`
 	Action   string `json:"action"`
 	Children []CasbinPermission `json:"children" gorm:"-"`
-}
-
-type CasbinRoleResp struct {
-	ID         uint     `json:"id"`
-	Name       string   `json:"name"`
-	CreateTime JSONTime `json:"create_time"`
 }
 
 // HasPermission check whether role having permission
@@ -123,11 +128,30 @@ func DeleteCasbinRole(id uint) error {
 	return gormDB.Delete(&CasbinRole{Model: Model{ID: id}}).Error
 }
 
-// GetCasbinRootPermissions load all root permissions
-func GetCasbinRootPermissions() []CasbinPermission {
-	var roots []CasbinPermission	
-	gormDB.Where("parent = ?", 0).Find(&roots)
-	return roots
+// GetCasbinPermissions get all permissions by hierarchy mode
+func GetCasbinPermissions() ([]CasbinPermission, error) {
+	var permissions []CasbinPermission
+	err := gormDB.Find(&permissions).Error
+	if err != nil {
+		return nil, err
+	}
+	// find root permissions
+	roots := make([]CasbinPermission, 0)
+	for i := range permissions {
+		if permissions[i].Parent == 0 {
+			roots = append(roots, permissions[i])
+		}
+	}
+	// build children permission of root
+	for i := range roots {
+		roots[i].Children = make([]CasbinPermission, 0)
+		for j := range permissions {
+			if permissions[j].Parent == roots[i].ID {
+				roots[i].Children = append(roots[i].Children, permissions[j])
+			}
+		}
+	}
+	return roots, nil
 }
 
 // GetCasbinPermissionsWithoutEmpty load all permission groups withoud empty group
@@ -184,30 +208,4 @@ func GetCasbinPermissionsByRoot(root uint) []CasbinPermission {
 	var permissons []CasbinPermission
 	gormDB.Where("parent = ?", root).Find(&permissons)
 	return permissons
-}
-
-// GetCasbinPermissions get all permissions by hierarchy mode
-func GetCasbinPermissions() ([]CasbinPermission, error) {
-	var permissions []CasbinPermission
-	err := gormDB.Find(&permissions).Error
-	if err != nil {
-		return nil, err
-	}
-	// find root permissions
-	roots := make([]CasbinPermission, 0)
-	for i := range permissions {
-		if permissions[i].Parent == 0 {
-			roots = append(roots, permissions[i])
-		}
-	}
-	// build children permission of root
-	for i := range roots {
-		roots[i].Children = make([]CasbinPermission, 0)
-		for j := range permissions {
-			if permissions[j].Parent == roots[i].ID {
-				roots[i].Children = append(roots[i].Children, permissions[j])
-			}
-		}
-	}
-	return roots, nil
 }
