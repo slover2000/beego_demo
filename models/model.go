@@ -4,24 +4,32 @@ import (
 	"github.com/slover2000/beego_demo/models/internal"
 )
 
+const (
+	AdminRoleID   = 0
+	AdminRoleName = "admin"	
+)
+
 type userCache struct {
-	roles       []uint
-	permissions []CasbinPermission
+	hasAdminRole  bool
+	roles        []uint
+	permissions  []CasbinPermission
 }
 
 // EnforcerModel ...
 type EnforcerModel struct {
-	autoRefresh bool
-	Permissions map[uint]CasbinPermission
-	Roles				map[uint][]uint
-	Users       map[string]*userCache
+	autoRefresh     bool
+	Permissions     map[uint]CasbinPermission
+	RolePermissions	map[uint][]uint
+	RoleNames       map[uint]string
+	Users           map[string]*userCache
 }
 
 func NewModel(autoRefresh bool) *EnforcerModel {
 	return &EnforcerModel{
 		autoRefresh: autoRefresh,
 		Permissions: make(map[uint]CasbinPermission),
-		Roles: make(map[uint][]uint),
+		RolePermissions: make(map[uint][]uint),
+		RoleNames: make(map[uint]string),
 		Users: make(map[string]*userCache),
 	}
 }
@@ -36,28 +44,56 @@ func (m *EnforcerModel) Init(users []CasbinUser, roles []CasbinRole, permissions
 			for _, p := range r.Permissions {
 				rolePermissions = append(rolePermissions, p.ID)
 			}
-			m.Roles[r.ID] = rolePermissions
+			m.RolePermissions[r.ID] = rolePermissions
+			m.RoleNames[r.ID] = r.Name
 		}
 
-		for _, user := range users {			
+		for _, user := range users {
+			hasAdminRole := false
 			roles := make([]uint, len(user.Roles))
-			for _, id := range user.Roles {
-				roles = append(roles, uint(id))
+			for i, id := range user.Roles {
+				roles[i] = uint(id)
+				if id == AdminRoleID {
+					hasAdminRole = true					
+				}
 			}
-			m.Users[user.Name] = &userCache{roles: roles, permissions: m.buildPermissions(roles)}
+			m.Users[user.Name] = &userCache{hasAdminRole: hasAdminRole, roles: roles, permissions: m.buildPermissions(roles)}
 		}
 		return nil
 }
 
 func (m *EnforcerModel) Refresh(users []CasbinUser, roles []CasbinRole, permissions []CasbinPermission) {
 	m.Permissions = make(map[uint]CasbinPermission)
-	m.Roles = make(map[uint][]uint)
+	m.RolePermissions = make(map[uint][]uint)
+	m.RoleNames = make(map[uint]string)
 	m.Users = make(map[string]*userCache)
 	m.Init(users, roles, permissions)
 }
 
+func (m *EnforcerModel) GetUserRoleNames(name string) []string {
+	if cache, ok := m.Users[name]; ok {
+		names := make([]string, len(cache.roles))
+		for i, id := range cache.roles {
+			if id == AdminRoleID {
+				names[i] = AdminRoleName
+				continue
+			} else {
+				if name, ok := m.RoleNames[id]; ok {
+					names[i] = name
+				}
+			}
+		}
+		return names
+	}
+	return []string{}
+}
+
 func (m *EnforcerModel) HasPermission(user, resource, action string) bool {
 	if cache, ok := m.Users[user]; ok {
+		if cache.hasAdminRole {
+			return true
+		}
+
 		for i := range cache.permissions {
 			p := cache.permissions[i]
 			if internal.KeyMatch(resource, p.Resource) && internal.RegexMatch(action, p.Action) {
@@ -71,7 +107,7 @@ func (m *EnforcerModel) HasPermission(user, resource, action string) bool {
 func (m *EnforcerModel) buildPermissions(roles []uint) []CasbinPermission {
 	permissions := make(map[uint]CasbinPermission)
 	for i := range roles {
-		if rolePermissions, ok := m.Roles[roles[i]]; ok {
+		if rolePermissions, ok := m.RolePermissions[roles[i]]; ok {
 			for j := range rolePermissions {
 				pid := rolePermissions[j]
 				if permission, ok := m.Permissions[pid]; ok {
@@ -91,6 +127,14 @@ func (m *EnforcerModel) buildPermissions(roles []uint) []CasbinPermission {
 func (m *EnforcerModel) UpdateUser(user string, roles []uint) {
 	if cache, ok := m.Users[user]; ok {
 		cache.roles = roles
+		hasAdminRole := false
+		for i := range roles {
+			if roles[i] == AdminRoleID {
+				hasAdminRole = true
+				break
+			}
+		}
+		cache.hasAdminRole = hasAdminRole
 		if m.autoRefresh {
 			cache.permissions = m.buildPermissions(roles)
 		}
@@ -116,7 +160,7 @@ func (m *EnforcerModel) RemoveUser(user string) {
 }
 
 func (m *EnforcerModel) UpdateRole(id uint, permissions []uint) {	
-	m.Roles[id] = permissions
+	m.RolePermissions[id] = permissions
 	// update impacting users
 	for name, cache := range m.Users {
 		for _, roleID := range cache.roles {
@@ -130,7 +174,8 @@ func (m *EnforcerModel) UpdateRole(id uint, permissions []uint) {
 }
 
 func (m *EnforcerModel) RemoveRole(id uint) {
-	delete(m.Roles, id)
+	delete(m.RolePermissions, id)
+	delete(m.RoleNames, id)
 	// update impacting users
 	for name, cache := range m.Users {
 		for i, roleID := range cache.roles {

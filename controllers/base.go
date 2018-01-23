@@ -6,8 +6,9 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/session"
-	"github.com/casbin/beego-orm-adapter"
-	"github.com/casbin/casbin"
+	//"github.com/casbin/beego-orm-adapter"
+	//"github.com/casbin/casbin"
+	"github.com/jinzhu/gorm"
 	"github.com/gogap/logrus"
 
 	"github.com/slover2000/beego_demo/models"
@@ -16,8 +17,6 @@ import (
 const (
 	STATUS_OK              = 0
 	STATUS_PERMISSION_DENY = -1
-	
-	adminRoleName    = "admin"
 )
 
 type responseData struct {
@@ -39,7 +38,8 @@ type baseController struct {
 	userName   string
 }
 
-var enforcer *casbin.SyncedEnforcer
+//var enforcer *casbin.SyncedEnforcer
+var enforcer models.Enforcer
 var globalSessions *session.Manager
 var layoutSections map[string]string
 
@@ -54,8 +54,13 @@ func initCasbinPolicy() {
 		beego.AppConfig.String("postgres.password"),
 		beego.AppConfig.String("postgres.host"),
 		beego.AppConfig.DefaultInt("postgres.port", 5432))
-	a := beegoormadapter.NewAdapter("postgres", dataSource, true) // Your driver and data source.
-	enforcer = casbin.NewSyncedEnforcer("./conf/rbac_model.conf", a)
+	db, err := gorm.Open("postgres", dataSource)
+	if err != nil {
+		panic(err)
+	}		
+	//a := beegoormadapter.NewAdapter("postgres", dataSource, true) // Your driver and data source.
+	//enforcer = casbin.NewSyncedEnforcer("./conf/rbac_model.conf", a)
+	enforcer = models.NewSyncedEnforcer(db, true)
 	// Load the policy from DB.
 	enforcer.LoadPolicy()
 }
@@ -124,16 +129,15 @@ func (c *baseController) authenticate() bool {
 		return false
 	}
 
-	roles := enforcer.GetRolesForUser(c.userName)
-	c.setupUserMenu(roles)
 	return true
 }
 
-func (c *baseController) setupUserMenu(roles []string) {
+func (c *baseController) setupUserMenu() {
+	roles := enforcer.GetRolesForUser(c.userName)
 	// 左侧导航栏
 	menus := make([]models.MenuItem, 0)
 	for i := range roles {
-		if strings.EqualFold(roles[i], adminRoleName) {
+		if strings.EqualFold(roles[i], models.AdminRoleName) {
 			permissionMenu := models.MenuItem{
 				ID: 1,
 				Name: "权限管理",

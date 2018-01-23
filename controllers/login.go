@@ -41,10 +41,14 @@ func (c *LoginController) Login() {
 		} else {
 			flash := beego.NewFlash()
 			flash.Error(errorMsg)
+			flash.Notice(username)
 			flash.Store(&c.Controller)
 			c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
 		}
 	} else {
+		flash := beego.NewFlash()
+		flash.Error("please input name and password")		
+		flash.Store(&c.Controller)		
 		c.Redirect(beego.URLFor("LoginController.ShowPage"), 302)
 	}
 }
@@ -56,6 +60,7 @@ func (c *LoginController) Logout() {
 }
 
 func (c *LoginController) ShowPage() {
+	beego.ReadFromRequest(&c.Controller)
 	c.Data["xsrfdata"] = template.HTML(c.XSRFFormHTML())
 	c.TplName = "login.html"
 }

@@ -15,6 +15,7 @@ type SyncedEnforcer struct {
 
 // NewSyncedEnforcer create a SyncedEnforcer object 
 func NewSyncedEnforcer(db *gorm.DB, autoLoad bool) Enforcer {
+	db.SingularTable(true)
 	return &SyncedEnforcer{db: db, model:NewModel(autoLoad)}
 }
 
@@ -33,18 +34,16 @@ func (e *SyncedEnforcer) SavePolicy() error {
 }
 
 func (e *SyncedEnforcer) RefreshPolicy() {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	
-	users := e.GetAllUsers()
-	roles := e.GetAllRoles()
-	permissions := e.GetAllChildPermissions()
-	e.model.Refresh(users, roles, permissions)
+	e.LoadPolicy()
+}
+
+func (e *SyncedEnforcer) GetRolesForUser(name string) []string {
+	return e.model.GetUserRoleNames(name)
 }
 
 func (e *SyncedEnforcer) GetAllRoles() []CasbinRole {
 	var roles []CasbinRole
-	if err := e.db.Find(&roles).Error; err == nil {
+	if err := e.db.Preload("Permissions").Find(&roles).Error; err == nil {
 		return roles
 	}
 	return []CasbinRole{}

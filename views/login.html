@@ -10,14 +10,13 @@
         <link rel="stylesheet" href="/static/css/login.css?t=1504439386553" media="all">
     </head>
     <body>
-        <div class="layui-carousel video_mask bg-img" id="login_carousel" >
-
+        <div class="layui-carousel video_mask bg-img" id="login_carousel">
             <div class="login layui-anim layui-anim-up">
                 <h1>CMS 管理后台</h1></p>
-                <form class="layui-form" action="/login" method="post">
+                <form id="loginForm" class="layui-form" action="/login" method="post">
                     {{ .xsrfdata }}
                     <div class="layui-form-item">
-                        <input type="text" name="username" lay-verify="required" placeholder="请输入账号" autocomplete="off"  value="{{.username}}" class="layui-input">
+                        <input type="text" name="username" lay-verify="required" placeholder="请输入账号" autocomplete="off"  value="{{.flash.notice}}" class="layui-input">
                     </div>
                     <div class="layui-form-item">
                         <input type="password" name="password" lay-verify="required" placeholder="请输入密码" autocomplete="off" value="" class="layui-input">
@@ -38,7 +37,7 @@
                 var form = layui.form;
                 var error_info = "{{.flash.error}}";
                 if(error_info){
-                    layer.msg(error_info,{time:2000,offset: '100px'});
+                    layer.tips('账号或密码错误', '#loginForm', {tips: [4, '#FF5722'], time: 10000});
                 }
 
                 form.on('select(login)', function(data) {

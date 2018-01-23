@@ -11,10 +11,11 @@ type Enforcer interface {
 	LoadPolicy() error
 	SavePolicy() error
 	RefreshPolicy()
+	GetRolesForUser(name string) []string
 	GetAllRoles() []CasbinRole
 	GetRoles(offset, limit int) ([]CasbinRole, int)
-	GetRole(id uint) (*CasbinRole, error)
-	CreateRole(role *CasbinRole) error	
+	GetRole(id uint) (*CasbinRole, error)	
+	CreateRole(role *CasbinRole) error
 	SaveRole(id uint, permissionIDs []uint) error
 	DeleteRole(id uint) error
 	GetPermissions() []CasbinPermission
