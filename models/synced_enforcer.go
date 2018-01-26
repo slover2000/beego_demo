@@ -29,10 +29,6 @@ func (e *SyncedEnforcer) LoadPolicy() error {
 	return e.model.Init(users, roles, permissions)	
 }
 
-func (e *SyncedEnforcer) SavePolicy() error {
-	return nil
-}
-
 func (e *SyncedEnforcer) RefreshPolicy() {
 	e.LoadPolicy()
 }
@@ -159,7 +155,7 @@ func (e *SyncedEnforcer) CreatePermission(p *CasbinPermission) error {
 
 	err := e.db.Create(p).Error
 	if err == nil {
-		e.model.UpdatePermissions(p.ID, p)
+		e.model.AddPermission(p.ID, p)
 	}
 	return err
 }
@@ -195,6 +191,13 @@ func (e *SyncedEnforcer) GetAllUsers() []CasbinUser {
 	return []CasbinUser{}
 }
 
+func (e *SyncedEnforcer) GetUsers(offset, limit int) ([]CasbinUser, int) {
+	var count int	
+	var users []CasbinUser
+	e.db.Offset(offset).Limit(limit).Order("id asc").Find(&users).Count(&count)
+	return users, count
+}
+
 func (e *SyncedEnforcer) GetUser(id int64) (*CasbinUser, error) {
 	user := &CasbinUser{}
 	err := e.db.First(user, id).Error
@@ -213,6 +216,16 @@ func (e *SyncedEnforcer) SaveUser(u *CasbinUser, roles []uint) error {
 	if err == nil {
 		e.model.UpdateUser(u.Name, roles)
 	}
+	return err
+}
+
+func (e *SyncedEnforcer) DeleteUser(id int64, name string) error {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	err := e.db.Delete(&CasbinUser{ID: id}).Error
+	if err == nil {
+		e.model.RemoveUser(name)
+	}	
 	return err
 }
 

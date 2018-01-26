@@ -9,7 +9,6 @@ import (
 // Enforcer interface
 type Enforcer interface {
 	LoadPolicy() error
-	SavePolicy() error
 	RefreshPolicy()
 	GetRolesForUser(name string) []string
 	GetAllRoles() []CasbinRole
@@ -22,9 +21,11 @@ type Enforcer interface {
 	GetPermissionsWithoutEmpty() []CasbinPermission
 	GetChildPermissions(parent uint) []CasbinPermission
 	CreatePermission(p *CasbinPermission) error
-	DeletePermission(pid uint) error	
+	DeletePermission(pid uint) error
+	GetUsers(offset, limit int) ([]CasbinUser, int)
 	GetUser(id int64) (*CasbinUser, error)
 	SaveUser(u *CasbinUser, roles []uint) error
+	DeleteUser(id int64, name string) error
 	Enforce(user, resource, action string) bool
 }
 

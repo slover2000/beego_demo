@@ -75,10 +75,7 @@ func (c *AdminController) GetUsers() {
 
 func (c *AdminController) GetUser() {
 	tpl := ""
-	roles, err := models.GetCasbinAllRoles()
-	if err != nil {
-		roles = make([]models.CasbinRole, 0)
-	}
+	roles := enforcer.GetAllRoles()
 	id, err := c.GetInt64("id")
 	if err != nil {
 		c.Data["roles"] = roles
@@ -93,7 +90,7 @@ func (c *AdminController) GetUser() {
 			c.Abort("400")
 		}
 		
-		casbinUser, err := models.GetCasbinUser(id)
+		casbinUser, err := enforcer.GetUser(id)
 		roleData := make([]RoleData, len(roles))
 		for i := range roles {
 			roleData[i].ID = roles[i].ID
@@ -164,7 +161,7 @@ func (c *AdminController) SaveUser() {
 
 	roles := make([]uint, 0)
 	c.Ctx.Input.Bind(&roles, "role")	
-	models.SaveCasbinUser(&models.CasbinUser{ID: user.Id, Name: user.Name}, roles)
+	enforcer.SaveUser(&models.CasbinUser{ID: user.Id, Name: user.Name}, roles)
 	c.Data["json"] = resp
 	c.ServeJSON()
 }
@@ -226,7 +223,7 @@ func (c *AdminController) CreateUser() {
 
 	roles := make([]uint, 0)
 	c.Ctx.Input.Bind(&roles, "role")
-	models.SaveCasbinUser(&models.CasbinUser{ID: user.Id, Name: user.Name}, roles)
+	enforcer.SaveUser(&models.CasbinUser{ID: user.Id, Name: user.Name}, roles)
 
 	c.Data["json"] = resp
 	c.ServeJSON()
@@ -244,8 +241,12 @@ func (c *AdminController) DeleteUser() {
 	resp := &responseData{
 		Status: 0,
 		Message: "ok",
-	}	
-	err = models.DeleteUser2(id)		
+	}
+	user2, err := models.GetUser2(id)
+	if err != nil {
+		err = models.DeleteUser2(id)
+		enforcer.DeleteUser(user2.Id, user2.Name)
+	}
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -270,8 +271,8 @@ func (c *AdminController) GetRole() {
 	if err != nil {
 		tpl = "admin/role_add"
 	} else {
-		groups := models.GetCasbinPermissionsWithoutEmpty()
-		role, err := models.GetCasbinRole(uint(id))
+		groups := enforcer.GetPermissionsWithoutEmpty()
+		role, err := enforcer.GetRole(uint(id))
 		if err == nil {
 			hadPermissions := make([]uint, 0)
 			for i := range groups {
@@ -325,7 +326,7 @@ func (c *AdminController) GetRoles() {
 	}
 
 	offset := (page - 1) * limit
-	roles, total := models.GetCasbinRoles(offset, limit)
+	roles, total := enforcer.GetRoles(offset, limit)
 	resp := &tableData{
 		Status: 0,
 		Message: "ok",
@@ -358,7 +359,7 @@ func (c *AdminController) SaveRole() {
 		Status: 0,
 		Message: "ok",
 	}		
-	err = models.SaveCasbinRole(uint(roleid), ids)
+	err = enforcer.SaveRole(uint(roleid), ids)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -386,7 +387,7 @@ func (c *AdminController) CreateRole() {
 		Status: 0,
 		Message: "ok",
 	}	
-	err := models.CreateCasbinRole(&role)
+	err := enforcer.CreateRole(&role)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -412,7 +413,7 @@ func (c *AdminController) DeleteRole() {
 		Status: 0,
 		Message: "ok",
 	}	
-	err = models.DeleteCasbinRole(uint(id))
+	err = enforcer.DeleteRole(uint(id))
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -426,7 +427,7 @@ func (c *AdminController) DeleteRole() {
 }
 
 func (c *AdminController) PermissionList() {
-	groups, _ := models.GetCasbinPermissions()
+	groups := enforcer.GetPermissions()
 	c.Data["permissGroup"] = groups
 	c.Data["pageTitle"] = "权限列表"
 	c.Data["xsrf_token"] = c.XSRFToken()
@@ -493,6 +494,7 @@ func (c *AdminController) CreatePermission() {
 	}
 	
 	permission := models.CasbinPermission{
+		Parent: uint(gid),
 		Name: name,
 		Resource: resource,
 		Action: action,
@@ -501,7 +503,7 @@ func (c *AdminController) CreatePermission() {
 		Status: 0,
 		Message: "ok",
 	}	
-	err = models.AppendCasbinPermissionToRoot(uint(gid), &permission)
+	err = enforcer.CreatePermission(&permission)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -523,19 +525,11 @@ func (c *AdminController) DeletePermission() {
 		c.Abort("400")
 	}
 
-	gid, err := c.GetUint32("group")
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"path": c.Ctx.Request.URL.Path,
-		}).Errorf("group id must be provided")
-		c.Abort("400")
-	}	
-
 	resp := &responseData{
 		Status: 0,
 		Message: "ok",
 	}	
-	err = models.DeleteCasbinPermissionFromRoot(uint(gid), uint(id))
+	err = enforcer.DeletePermission(uint(id))
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -555,7 +549,7 @@ func (c *AdminController) GetGroup() {
 		c.Data["xsrfdata"] = template.HTML(c.XSRFFormHTML())
 		c.renderAjaxTemplate(tpl)
 	} else {
-		permissions := models.GetCasbinPermissionsByRoot(uint(gid))
+		permissions := enforcer.GetChildPermissions(uint(gid))
 		resp := &tableData{
 			Status: 0,
 			Message: "ok",
@@ -580,7 +574,7 @@ func (c *AdminController) CreateGroup() {
 		Status: 0,
 		Message: "ok",
 	}	
-	err := models.CreateCasbinRootPermission(&models.CasbinPermission{Name: name})
+	err := enforcer.CreatePermission(&models.CasbinPermission{Name: name})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"path": c.Ctx.Request.URL.Path,
@@ -602,7 +596,7 @@ func (c *AdminController) DeleteGroup() {
 		c.Abort("400")
 	}
 
-	err = models.DeleteCasbinRootPermission(uint(group))
+	err = enforcer.DeletePermission(uint(group))
 	resp := &responseData{
 		Status: 0,
 		Message: "ok",

@@ -1,5 +1,5 @@
 hash: 7d0b90753e919cbf459a1093ea52abbd012576f8a0fc0abeb3a6939900905e17
-updated: 2018-01-08T17:40:24.3511199+08:00
+updated: 2018-01-25T11:14:02.993174+08:00
 imports:
 - name: github.com/apache/thrift
   version: 14f5d500b9ae0fb6654aec9009a8bc34a8bb6dfb
@@ -13,7 +13,6 @@ imports:
   - context/param
   - grace
   - logs
-  - orm
   - session
   - toolbox
   - utils
@@ -23,17 +22,6 @@ imports:
   - quantile
 - name: github.com/BurntSushi/toml
   version: a368813c5e648fee92e5f6c30e3944ff9d5e8895
-- name: github.com/casbin/beego-orm-adapter
-  version: 5a0889a912283a800c87550e4b89432d737eb517
-- name: github.com/casbin/casbin
-  version: 1b8f581b3213fee8295c7dc7018fb16566eb2cb9
-  subpackages:
-  - config
-  - file-adapter
-  - model
-  - persist
-  - rbac
-  - util
 - name: github.com/coreos/etcd
   version: b48cf77abb78755c8654eb8da61bc90a32802e7d
   subpackages:
@@ -58,6 +46,11 @@ imports:
   - gogoproto
   - proto
   - protoc-gen-gogo/descriptor
+- name: github.com/golang/freetype
+  version: e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4
+  subpackages:
+  - raster
+  - truetype
 - name: github.com/golang/protobuf
   version: 1e59b77b52bf8e4b449a57e6f79f21226d571845
   subpackages:
@@ -66,8 +59,10 @@ imports:
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
-- name: github.com/Knetic/govaluate
-  version: 9aa49832a739dcd78a5542ff189fb82c3e423116
+- name: github.com/jinzhu/gorm
+  version: 0a51f6cdc55d1650d9ed3b4c13026cfa9133b01e
+- name: github.com/jinzhu/inflection
+  version: 1c35d901db3da928c72a72d8458480cc9ade058f
 - name: github.com/koding/multiconfig
   version: 69c27309b2d751c576b59ea9c3726597c2375da3
 - name: github.com/lestrrat/go-file-rotatelogs
@@ -75,13 +70,15 @@ imports:
 - name: github.com/lestrrat/go-strftime
   version: 04ef93e285313c8978cbc7cad26d2aa7a9927451
 - name: github.com/lib/pq
-  version: 83612a56d3dd153a94a629cd64925371c9adad78
+  version: 19c8e9ad00952ce0c64489b60e8df88bb16dd514
   subpackages:
   - oid
 - name: github.com/matttproud/golang_protobuf_extensions
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
   - pbutil
+- name: github.com/mojocn/base64Captcha
+  version: f8e0aa6194261e5c3e777ad815f1c872d2e3aeab
 - name: github.com/olivere/elastic
   version: 7a065d53ac847c9aba9385e84fa24ef4647a6ae2
   subpackages:
@@ -132,6 +129,11 @@ imports:
   - bcrypt
   - blowfish
   - ssh/terminal
+- name: golang.org/x/image
+  version: 12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7
+  subpackages:
+  - font
+  - math/fixed
 - name: golang.org/x/net
   version: 66aacef3dd8a676686c7ae3716979581e8b03c47
   subpackages:

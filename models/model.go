@@ -189,7 +189,11 @@ func (m *EnforcerModel) RemoveRole(id uint) {
 	}
 }
 
-func (m *EnforcerModel) UpdatePermissions(id uint, permission *CasbinPermission) {
+func (m *EnforcerModel) AddPermission(id uint, permission *CasbinPermission) {
+	m.Permissions[id] = *permission
+}
+
+func (m *EnforcerModel) UpdatePermission(id uint, permission *CasbinPermission) {
 	m.Permissions[id] = *permission
 	// update impacting users
 	if m.autoRefresh {
