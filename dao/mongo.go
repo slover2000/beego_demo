@@ -64,8 +64,14 @@ func StoreUserInfo(user *models.User) bool {
 
 // QueryAllUser query user info from db
 func QueryAllUser(ctx context.Context) ([]models.User, error) {
-	ctx = hystrix.WithGroup(ctx, "mongo")
-	ctx = p.JoinDatabaseContextValue(ctx, prisma.MongoName, "test_db", "user", "find", "find all users")
+	ctx = hystrix.WithGroup(ctx, "mongo")	
+	ctx = p.JoinDatabaseContextValue(ctx, p.DatabaseParam{
+		System: prisma.MongoName,
+		Database: "test_db",
+		Table: "user",
+		Action: "find",
+		SQL: "find all users",
+	}) // the following codes is optional, you can not set context value if you don't want to metric specific database
 	reqctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	values, err := prisma.Do(
 		reqctx,
